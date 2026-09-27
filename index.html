@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stringbed: learn to string a tennis racket</title>
+<meta name="description" content="Learn to string a tennis racket step by step. Pick your frame and string, then follow a guide drawn for your exact setup.">
+<meta name="theme-color" content="#0b0e12">
+<meta property="og:title" content="Stringbed: learn to string a tennis racket">
+<meta property="og:description" content="A step by step stringing guide drawn for your racket, string and machine.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23161b22'/%3E%3Cg stroke='%234cc9e0' stroke-width='2'%3E%3Cpath d='M9 6v20M16 6v20M23 6v20M6 9h20M6 16h20M6 23h20'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=34">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============================ CHROME ============================ -->
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Stringbed</span>
+    </div>
+
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+      <button class="tab on" data-tab="racket" role="tab" id="tab-btn-racket"
+        aria-controls="tab-racket" aria-selected="true"><b>1</b>Racket</button>
+      <button class="tab" data-tab="string" role="tab" id="tab-btn-string"
+        aria-controls="tab-string" aria-selected="false" tabindex="-1"><b>2</b>String</button>
+      <button class="tab" data-tab="do" role="tab" id="tab-btn-do"
+        aria-controls="tab-do" aria-selected="false" tabindex="-1"><b>3</b>String it</button>
+      <button class="tab tab-ref" data-tab="learn" role="tab" id="tab-btn-learn"
+        aria-controls="tab-learn" aria-selected="false" tabindex="-1">Learn</button>
+    </nav>
+
+    <div class="top-actions">
+      <button type="button" class="btn ghost" id="btnSetup">Setup guide</button>
+    </div>
+  </header>
+
+  <!-- one read-only line: what is on the bench right now -->
+  <div class="spec" id="specStrip" aria-label="Current job" tabindex="0"></div>
+
+  <main>
+
+    <!-- ============================ 1 · RACKET ============================ -->
+    <section class="screen on" id="tab-racket" role="tabpanel" aria-labelledby="tab-btn-racket">
+      <div class="layout">
+        <div class="controls">
+          <header class="screen-h">
+            <h1>Which racket?</h1>
+            <p>Your racket decides the string pattern, the tension range, and which end you start from.</p>
+          </header>
+
+          <section class="fieldset">
+            <h2><i>1</i>Brand</h2>
+            <div class="seg grid4" id="brandSeg" role="radiogroup" aria-label="Brand"></div>
+          </section>
+
+          <section class="fieldset">
+            <h2><i>2</i>Model</h2>
+            <label class="field"><span class="sr-only">Model</span>
+              <select id="selModel"></select></label>
+          </section>
+
+          <div class="cta-row">
+            <button type="button" class="btn primary" data-goto="string">Next: choose a string</button>
+          </div>
+        </div>
+
+        <aside class="stage">
+          <div class="stage-art" id="racketArt"></div>
+          <dl class="facts" id="racketFacts"></dl>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================ 2 · STRING ============================ -->
+    <section class="screen" id="tab-string" role="tabpanel" aria-labelledby="tab-btn-string">
+      <div class="layout">
+        <div class="controls">
+          <header class="screen-h">
+            <h1>Which string?</h1>
+          </header>
+
+          <nav class="deck-nav" id="deckNav" role="tablist" aria-label="String setup"></nav>
+
+          <section class="fieldset card" hidden>
+            <h2>Setup</h2>
+            <div class="grid-3">
+              <label class="field"><span>Thickness</span><select id="selGauge"></select></label>
+              <div class="field"><span>Method</span>
+                <div class="seg" id="methodSeg" role="radiogroup" aria-label="Method">
+                  <button type="button" data-m="one" role="radio" aria-checked="false">One piece</button>
+                  <button type="button" data-m="two" role="radio" aria-checked="true">Two piece</button>
+                </div>
+              </div>
+              <div class="field"><span>Machine</span>
+                <div class="seg" id="machineSeg" role="radiogroup" aria-label="Machine"></div>
+              </div>
+            </div>
+            <p class="help" id="setupHelp"></p>
+          </section>
+
+          <section class="fieldset card" hidden>
+            <h2>Kind of string</h2>
+            <div class="plane">
+              <h3 class="plane-h" id="kindMainH" hidden>Mains</h3>
+              <div class="seg" id="kindSeg" role="radiogroup" aria-label="Kind of string"></div>
+            </div>
+            <div class="plane" id="kindCrossWrap" hidden>
+              <h3 class="plane-h">Crosses</h3>
+              <div class="seg" id="crossKindSeg" role="radiogroup"
+                aria-label="Kind of string in the crosses"></div>
+            </div>
+            <p class="help" id="kindHelp"></p>
+          </section>
+
+          <section class="fieldset card" hidden>
+            <h2>String</h2>
+            <div class="plane">
+              <h3 class="plane-h" id="planeMainH" hidden>Mains</h3>
+              <div class="with-swatch">
+                <label class="field grow"><span class="sr-only">Mains string</span>
+                  <select id="selMain"></select></label>
+                <div class="swatches" id="swMain" role="group" aria-label="Colour"></div>
+              </div>
+            </div>
+            <div class="plane" id="planeCross" hidden>
+              <h3 class="plane-h">Crosses</h3>
+              <div class="with-swatch">
+                <label class="field grow"><span class="sr-only">Cross string</span>
+                  <select id="selCross"></select></label>
+                <div class="swatches" id="swCross" role="group" aria-label="Cross colour"></div>
+              </div>
+            </div>
+            <p class="help" id="stringHelp"></p>
+          </section>
+
+          <section class="fieldset card" hidden>
+            <h2>Tension</h2>
+            <div class="readout">
+              <b id="tMainVal" class="num"></b><span class="unit">lb</span>
+              <span class="readout-tag" id="tenRange"></span>
+            </div>
+            <input id="tMain" type="range" min="35" max="70" step="1" value="52"
+              aria-label="Mains tension in pounds">
+            <label class="check"><input type="checkbox" id="linkTension" checked>
+              <span>Crosses follow the mains</span></label>
+            <div id="tCrossWrap" hidden>
+              <div class="readout sub">
+                <b id="tCrossVal" class="num"></b><span class="unit">lb crosses</span>
+              </div>
+              <input id="tCross" type="range" min="35" max="70" step="1" value="50"
+                aria-label="Crosses tension in pounds">
+            </div>
+            <p class="help warn" id="tenWarn" role="status" hidden></p>
+          </section>
+
+          <div class="deck-foot">
+            <button type="button" class="btn ghost" id="deckPrev">Back</button>
+            <button type="button" class="btn primary" id="deckNext">Next</button>
+          </div>
+
+        </div>
+
+        <aside class="stage">
+          <div class="art-wrap">
+            <div class="stage-art" id="stringArt"></div>
+            <div class="stage-tools">
+              <button type="button" class="btn tiny" id="btnReplay">Replay</button>
+              <details class="dl-menu">
+                <summary class="btn tiny ghost">Download</summary>
+                <div class="dl-pop">
+                  <button type="button" class="btn tiny ghost" data-export="png">Image (PNG)</button>
+                  <button type="button" class="btn tiny ghost" data-export="svg">Drawing (SVG)</button>
+                </div>
+              </details>
+            </div>
+            <span class="tool-msg" id="exportMsg" role="status" aria-live="polite"></span>
+          </div>
+          <p class="stage-cap" id="stringHint"></p>
+          <dl class="facts" id="stringFacts"></dl>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================ 3 · STRING IT ============================ -->
+    <section class="screen" id="tab-do" role="tabpanel" aria-labelledby="tab-btn-do">
+      <div class="layout layout-do">
+        <div class="controls">
+          <header class="screen-h">
+            <h1>String it</h1>
+            <p>Nine steps, in order. Tick each check as you go. Your place is saved.</p>
+          </header>
+          <div class="prog">
+            <div class="prog-top">
+              <span id="progText"></span>
+            </div>
+            <ol class="rail" id="stepRail" aria-label="Jump to a step"></ol>
+          </div>
+          <ol class="steps" id="steps"></ol>
+          <p class="finish-msg" id="finishMsg" role="status" aria-live="polite"></p>
+          <p class="fineprint" id="jobNotice"></p>
+        </div>
+
+        <aside class="stage">
+          <div class="art-wrap">
+            <div class="do-cap">
+              <span class="do-cap-n" id="doCapN"></span>
+              <b id="doCapT"></b>
+            </div>
+            <div class="stage-art" id="doArt"></div>
+          </div>
+          <div class="player" id="stepCtl">
+            <div class="player-btns">
+              <button type="button" class="btn ghost pl-btn" id="btnPrevString"
+                aria-label="Previous string">&#8249;</button>
+              <button type="button" class="btn primary pl-btn pl-play" id="btnPlayString"
+                aria-label="Play string by string">&#9654;</button>
+              <button type="button" class="btn ghost pl-btn" id="btnNextString"
+                aria-label="Next string">&#8250;</button>
+            </div>
+            <div class="player-scrub">
+              <input type="range" id="stringScrub" min="1" max="1" value="1" step="1"
+                aria-label="Scrub through the strings">
+              <div class="player-meta">
+                <span class="mono" id="stringLabel"></span>
+                <button type="button" class="linkish" id="btnReplayStep">Replay animation</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================ 4 · LEARN ============================ -->
+    <section class="screen" id="tab-learn" role="tabpanel" aria-labelledby="tab-btn-learn">
+      <header class="screen-h">
+        <button type="button" class="btn ghost back-step" id="backToStep" hidden></button>
+        <h1>Learn</h1>
+        <p>Background on the words, the machine and the knots. Nothing here changes your job.</p>
+      </header>
+
+      <nav class="subtabs" id="subtabs" role="tablist" aria-label="Learn sections">
+        <button class="subtab on" data-sub="words" role="tab" aria-selected="true"
+          id="sub-btn-words" aria-controls="sub-words">Words to know</button>
+        <button class="subtab" data-sub="tension" role="tab" aria-selected="false" tabindex="-1"
+          id="sub-btn-tension" aria-controls="sub-tension">Tension &amp; clamping</button>
+        <button class="subtab" data-sub="knots" role="tab" aria-selected="false" tabindex="-1"
+          id="sub-btn-knots" aria-controls="sub-knots">The two knots</button>
+        <button class="subtab" data-sub="machines" role="tab" aria-selected="false" tabindex="-1"
+          id="sub-btn-machines" aria-controls="sub-machines">Choosing a machine</button>
+      </nav>
+
+      <div class="sub on" id="sub-words" role="tabpanel" aria-labelledby="sub-btn-words">
+        <div class="gloss" id="glossary"></div>
+      </div>
+
+      <div class="sub" id="sub-tension" role="tabpanel" aria-labelledby="sub-btn-tension" hidden>
+        <p class="lede-p">Every string follows the same cycle: <b>pull, clamp, release, next string</b>.
+        Your machine decides <b>when</b> you clamp.</p>
+        <div class="clamp-grid">
+          <section class="ref-sec">
+            <h3 class="ref-h">When to clamp</h3>
+            <ul class="mc-list" id="ttMachines"></ul>
+          </section>
+          <section class="ref-sec">
+            <h3 class="ref-h">Where to clamp</h3>
+          <figure class="clamp-fig">
+            <div class="clamp-pair">
+          <svg class="clamp-svg" viewBox="0 0 300 150" role="img"
+              aria-label="Close to the frame: the clamp is a few millimetres from the frame.">
+            <rect x="0.5" y="0.5" width="299" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
+            <path d="M14,18 l5,5 l9,-10" fill="none" stroke="var(--good)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="36" y="23" class="cl-h" fill="var(--good)">Close to the frame</text>
+            <text x="207.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
+            <rect x="196" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
+            <rect x="196" y="52" width="4" height="88" fill="#59616c"/>
+            <path d="M10,96 H288" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
+            <path d="M272,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="288" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
+            <text x="180.0" y="77" class="cl-s" text-anchor="middle" fill="var(--ink-2)">clamp</text>
+            <rect x="169" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <rect x="169" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <path d="M192,126 H195" stroke="var(--good)" stroke-width="1.6" />
+            <path d="M192,121 v10 M195,121 v10" stroke="var(--good)" stroke-width="1.6"/>
+            <text x="192" y="140" class="cl-s" text-anchor="end" fill="var(--good)">a few mm</text>
+          </svg>
+          <svg class="clamp-svg" viewBox="0 0 300 150" role="img"
+              aria-label="Out in the stringbed: the clamp is far from the frame, out in the stringbed.">
+            <rect x="0.5" y="0.5" width="299" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
+            <path d="M15,13 l11,11 M26,13 l-11,11" fill="none" stroke="var(--warn)" stroke-width="2.6" stroke-linecap="round"/>
+            <text x="36" y="23" class="cl-h" fill="var(--warn)">Out in the stringbed</text>
+            <text x="207.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
+            <rect x="196" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
+            <rect x="196" y="52" width="4" height="88" fill="#59616c"/>
+            <path d="M10,96 H288" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
+            <path d="M272,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="288" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
+            <text x="41.0" y="77" class="cl-s" text-anchor="middle" fill="var(--ink-2)">clamp</text>
+            <rect x="30" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <rect x="30" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <path d="M53,126 H195" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="4 3"/>
+            <path d="M53,121 v10 M195,121 v10" stroke="var(--warn)" stroke-width="1.6"/>
+            <text x="124.0" y="119" class="cl-s" text-anchor="middle" fill="var(--warn)">lots of free string</text>
+          </svg>
+            </div>
+          </figure>
+          </section>
+        </div>
+
+        <section class="ref-sec">
+          <h3 class="ref-h">Clamping</h3>
+          <div class="rules rules-3">
+            <div><h4>Fixed clamps or flying clamps</h4><p>Fixed clamps are mounted on the machine and hold
+              steady. Flying clamps float on the stringbed and grip against the next string, so they lose a
+              little more tension. With flying clamps, some stringers add a pound or two.</p></div>
+            <div><h4>Keep every pull the same</h4><p>Same speed, same rhythm, every string. Doing it the
+              same way each time matters more than the exact moment you pick.</p></div>
+            <div><h4>Do not over-tighten the mount</h4><p>The supports should be snug, not cranked down.
+              Too much pressure can bend the hoop or even crack the frame.</p></div>
+          </div>
+        </section>
+
+        <section class="ref-sec">
+          <h3 class="ref-h">After you string</h3>
+          <div class="rules">
+            <div><h4>Tension drops, and that is normal</h4><p>Strings lose tension from the moment they are
+              strung. About 10 to 15% in the first day is normal, and it keeps dropping more slowly after
+              that. Polyester drops the fastest.</p></div>
+            <div><h4>Pre-stretching</h4><p>Pulling the string before you string it takes out some of its
+              early stretch, so the stringbed holds its tension a little better. It is optional. Check the
+              string maker&rsquo;s advice first.</p></div>
+            <div><h4>Comparing two rackets</h4><p>Use a stringbed tension tester, not the number you set
+              on the machine. Different machines give different results from the same setting.</p></div>
+            <div><h4>Calibrate your machine</h4><p>A tension calibrator costs about $30 and tells you
+              whether 52 on your machine is really 52.</p></div>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="sub" id="sub-knots" role="tabpanel" aria-labelledby="sub-btn-knots" hidden>
+        <div class="knot-page">
+          <p class="lede-p">A string job uses <b>two different knots</b>. One <b>starts</b> a run, the
+          other <b>finishes</b> one. Both sit outside the grommet (the plastic tube the string passes
+          through). The difference is how bulky each one needs to be.</p>
+
+          <div class="knot-pick" id="knotPicker" role="tablist" aria-label="Which knot">
+            <button type="button" class="knot-tab on" role="tab" id="ktab-finish"
+              aria-controls="kpanel-finish" aria-selected="true" data-knot="finish">
+              <b>Finishing tie-off</b><em>Ends a tensioned string</em></button>
+            <button type="button" class="knot-tab" role="tab" id="ktab-start" tabindex="-1"
+              aria-controls="kpanel-start" aria-selected="false" data-knot="start">
+              <b>Starting knot</b><em>Starts two-piece crosses</em></button>
+          </div>
+
+          <section class="knot-panel" id="kpanel-finish" role="tabpanel" aria-labelledby="ktab-finish"
+            tabindex="0">
+            <header class="knot-head">
+              <h2>Finishing tie-off</h2>
+              <p class="lede-p">Use this knot after the final string has been tensioned.</p>
+            </header>
+            <div class="knot-layout">
+              <div class="knot-figure"><div class="knot-mount" id="knotMount"></div></div>
+              <div class="knot-aside">
+                <p class="warn"><b>Check:</b> the finished knot sits firmly against the
+                <b>outside</b> of the grommet or the frame. Trim the end to about 4&nbsp;mm.</p>
+                <details class="why">
+                  <summary>More detail</summary>
+                  <p>The knot is called a <b>double half hitch</b>. Zoom in on the diagram to see which
+                  strand goes over and which goes under.</p>
+                  <p>There are fancier tie-offs, like the Parnell, the Pro knot and the Wilson knot, and
+                  they all have their fans. Learn this one first. It holds, it is small, and it works on
+                  almost every frame.</p>
+                  <p>It does not matter which way you start. You can bring the loose end up the near side
+                  and then pass it under the anchor string, or go under first and come back over. Either
+                  way it forms the same loop, and the end tucks back through it. That is one half hitch.
+                  Do it twice, the same way both times, and you have a double half hitch. The only
+                  difference is whether it turns left or right.</p>
+                  <p>This is a <b>finishing</b> knot. It holds a string that is already at tension. It is
+                  not the <a href="#kpanel-start" data-knot="start">starting knot</a>, which gets pulled
+                  on hard and needs more bulk.</p>
+                </details>
+              </div>
+            </div>
+          </section>
+
+          <section class="knot-panel" id="kpanel-start" role="tabpanel" aria-labelledby="ktab-start"
+            tabindex="0" hidden>
+            <header class="knot-head">
+              <h2>Starting knot</h2>
+              <p class="lede-p">Use this knot to anchor the first cross in a two-piece string job.</p>
+            </header>
+            <p class="note" id="knotStartNA" hidden>Your current job is <b>one piece</b>, so it does not need a
+            starting knot. The string runs straight on from the mains into the crosses. This lesson is
+            here if you want to learn it anyway.</p>
+            <div class="knot-layout">
+              <div class="knot-figure"><div class="sk-mount" id="startKnotMount"></div></div>
+              <div class="knot-aside">
+                <p class="warn"><b>Check:</b> pull the first cross to tension <b>slowly</b> and watch the
+                knot. If it moves toward or into the grommet, release tension and retie it. Only once the
+                knot has survived a full pull should you trim the tail to about 4&nbsp;mm.</p>
+                <details class="why">
+                  <summary>More detail</summary>
+                  <h4>Where the knot is tied</h4>
+                  <p>In the frame's marked <b>starting hole</b>, next to the first cross. A <b>tensioned
+                  main</b> already runs through it. Feed the cross string through the same hole, beside that
+                  main, and tie the knot <b>around the main</b>, against the outside of the grommet. It is the
+                  same setup as a finishing tie-off. Only the bulk is different.</p>
+                  <p>From there the string runs along the outside of the frame to the next hole, the
+                  <b>first cross hole</b>, and into the stringbed as the first cross.</p>
+                  <p>Bulk is the difference between this knot and the finishing tie-off. Both sit outside
+                  the grommet, but this one gets pulled on straight away, so it has to be fat enough not to
+                  slip through the hole.</p>
+                  <h4>A variation you may see</h4>
+                  <p>As you pull the tail through, a third loop opens up. That is the big loop closing
+                  down. Some stringers feed the tail through that one as well before pulling it tight, which
+                  adds more bulk. Both versions hold. The extra pass is worth knowing if your knot keeps
+                  slipping.</p>
+                  <p class="note">The frame itself shows which holes to use. This app does not decide
+                  that, and the positions in the diagrams are only examples. Check them against your racket
+                  or the maker's stringing pattern.</p>
+                </details>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="sub" id="sub-machines" role="tabpanel" aria-labelledby="sub-btn-machines" hidden>
+        <p class="lede">The main difference between machines is <b>how they hold tension after a pull</b>.
+        Choose based on speed, consistency, and how much skill each one needs.</p>
+        <div id="machineMount"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Stringbed is a learning guide. Tension and stiffness numbers are estimates, not lab
+    measurements. Check the tie-off and skip holes on your own frame.</span>
+  </footer>
+
+  <!-- first-run entry -->
+  <div class="modal" id="startCard">
+    <div class="modal-back" data-start="dismiss"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="startTitle" tabindex="-1">
+      <button class="modal-x" type="button" data-start="dismiss" aria-label="Close">&times;</button>
+      <div id="startChoose">
+        <h2 id="startTitle">Starting a racket?</h2>
+        <div class="start-opts">
+          <button type="button" class="start-opt" data-start="wizard">
+            <b>Guide me through my first job</b>
+            <span>Four questions, then straight into the steps.</span></button>
+          <button type="button" class="start-opt" data-start="direct">
+            <b>I know my setup</b>
+            <span>Go straight to the bench.</span></button>
+        </div>
+        <div class="start-resume" id="startResume" hidden>
+          <p id="startResumeText"></p>
+          <div class="cta-row">
+            <button type="button" class="btn primary" data-start="resume">Resume</button>
+            <button type="button" class="btn ghost" data-start="fresh">Start a new job</button>
+          </div>
+        </div>
+      </div>
+      <div class="wizard" id="wizard" hidden></div>
+    </div>
+  </div>
+
+  <div class="modal" id="throatModal"></div>
+</div>
+
+<script src="js/fmt.js?v=34"></script>
+<script src="js/rackets.js?v=34"></script>
+<script src="js/strings.js?v=34"></script>
+<script src="js/geometry.js?v=34"></script>
+<script src="js/racketSvg.js?v=34"></script>
+<script src="js/steps.js?v=34"></script>
+<script src="js/throat.js?v=34"></script>
+<script src="js/knot.js?v=34"></script>
+<script src="js/startKnot.js?v=34"></script>
+<script src="js/machines.js?v=34"></script>
+<script src="js/job.js?v=34"></script>
+<script src="js/wizard.js?v=34"></script>
+<script src="js/app.js?v=34"></script>
+</body>
+</html>
