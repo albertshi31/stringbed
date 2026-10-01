@@ -15,7 +15,7 @@ const Job = (function () {
   const LEGACY = 'stringbed.v1';
   /* 3: the String tab lost its String card, so the deck went from four cards
      to three and a saved card index means something different. */
-  const VERSION = 3;
+  const VERSION = 4;
 
   /* ---------------- machines ---------------- */
   /* ONE SOURCE OF TRUTH for every machine fact in the app. The setup guide, the
@@ -299,9 +299,22 @@ const Job = (function () {
     take('sideCard', v => ['racket', 'strings', 'job'].includes(v));
     take('purpose', v => PURPOSES.some(p => p.id === v));
     take('seenStart', v => typeof v === 'boolean');
+    /* Before version 4 the guide had nine steps, the fifth being the method.
+       It folded into the measuring step, so later steps move down by one and
+       the place and ticks of an old save still land on the same step. */
+    const shift = !(o.v >= 4);
+    if (shift && Number.isInteger(state.step) && state.step > 4) state.step -= 1;
     if (o.checked && typeof o.checked === 'object' && !Array.isArray(o.checked)) {
       const c = {};
-      Object.keys(o.checked).forEach(k => { if (o.checked[k] === true) c[k] = true; });
+      Object.keys(o.checked).forEach(k => {
+        if (o.checked[k] !== true) return;
+        const m = /^(\d+)-(\d+)$/.exec(k);
+        if (shift && m) {
+          const i = +m[1];
+          if (i === 4) return;                       // the old method step had nothing to tick
+          c[(i > 4 ? i - 1 : i) + '-' + m[2]] = true;
+        } else c[k] = true;
+      });
       state.checked = c;
     }
     /* A sandbox pattern must never survive into real-racket mode: the frame is

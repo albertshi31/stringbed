@@ -241,9 +241,16 @@ const Steps = (function () {
     steps.push({
       id: 'measure', stage: 'empty', title: 'Measure your string',
       body: layout({
-        specs: [['In the bed', `≈ ${Fmt.metresOnly(stats.totalM)}`],
+        specs: [['Method', `${onePiece ? 'One piece' : 'Two piece'}, ${onePiece ? 2 : 4} knots`],
                 ['Cut length', Fmt.metresOnly(cutM)],
                 ['Set spare', `${m1(spare)} m`]],
+        /* The method used to be a step of its own, after the cut. It decides
+           the cut, so it is stated here, where the string is measured. */
+        intro: `<p class="step-note">${onePiece
+            ? 'One piece: one string does the mains and the crosses, with no starting knot.'
+            : 'Two piece: one length for the mains and one for the crosses.'}
+          Chosen on the String tab.${onePiece && mainString.id !== crossString.id
+            ? ' <b>A hybrid needs two piece</b>, so change it there before you cut.' : ''}</p>`,
         actions: onePiece ? [
           `<b>Using a packaged set?</b> Open it and use all of the string. Do not trim it first.
            This job leaves about <b>${m1(spare)} m</b> over.`,
@@ -302,36 +309,6 @@ const Steps = (function () {
                ${pl.crossEnd}.</p>` : ''}`
       }),
       checks: ['Throat hole sets counted']
-    });
-
-    steps.push({
-      id: 'method', stage: 'empty', title: `Method: ${onePiece ? 'one piece' : 'two piece'}`,
-      body: layout({
-        specs: [['Method', onePiece ? 'One piece' : 'Two piece'], ['Knots', onePiece ? 2 : 4],
-                [g('hybrid'), onePiece ? 'not possible' : 'possible']],
-        /* No switch here: the string was cut for this method in step 3. It is
-           chosen on the String tab, before anything is cut. */
-        intro: `<p class="step-note">Chosen on the String tab before you cut. To change it, go back to
-          the String tab and measure again.</p>`,
-        // only the method that is picked: the other one's description was noise
-        actions: [onePiece
-          ? `One string does the mains and the crosses, so there is no starting knot. The crosses begin
-             wherever the mains finished. On this frame, that is the ${plOne.crossStart}.`
-          : `Two lengths, each with its own start and finish. Needed for a ${g('hybrid')} or a split
-             tension, and it works on any frame.`],
-        watch: !onePiece ? ''
-          : mainString.id !== crossString.id
-            ? `You have a hybrid selected (${mainString.name} mains, ${crossString.name.toLowerCase()} crosses). That needs
-               <b>two piece</b>.`
-          : crossUp
-            ? upNote
-          : tMain !== tCross
-            ? `Mains ${tMain} lb and crosses ${tCross} lb is a split tension. It works either way, but is easiest
-               with two piece.`
-            : `On a one piece, a mistake late in the crosses costs you the whole set. On a two piece it only
-               costs the cross piece.`
-      }),
-      checks: []
     });
 
     steps.push({
