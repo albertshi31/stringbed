@@ -13,7 +13,9 @@ const Job = (function () {
 
   const STORE = 'stringbed.v2';
   const LEGACY = 'stringbed.v1';
-  const VERSION = 2;
+  /* 3: the String tab lost its String card, so the deck went from four cards
+     to three and a saved card index means something different. */
+  const VERSION = 3;
 
   /* ---------------- machines ---------------- */
   /* ONE SOURCE OF TRUTH for every machine fact in the app. The setup guide, the
@@ -50,12 +52,12 @@ const Job = (function () {
       operator: 'Most technique-dependent', speed: 'Slow',
       clamp: 'Clamp when the bar is level and settled.',
       why: 'Take up the slack, lift the bar 30 to 45° above level, and let go. Gravity lowers it and the ratchet holds what it gains. When the bar comes to rest level with the racket, the string is at the set tension, so clamp. Level matters because the pull follows the cosine of the bar angle. A bar sitting 20° off level is pulling about 6% under, which is three pounds at 52. If it settles below level, lift it above level and let go again. If it settles above level, release it and pull again. Never force the bar to horizontal by hand, because that can over-tension the string.' },
-    { id: 'crank', name: 'Crank / lockout', short: 'crank',
+    { id: 'crank', name: 'Crank (lockout)', short: 'crank',
       reference: 'A spring that trips at the set tension, so it needs calibrating',
       pull: 'Locks out and stops pulling', beat: 'Clamp promptly',
       repeat: 'Good, with consistent timing',
       operator: 'Moderately technique-dependent', speed: 'Fast',
-      clamp: 'Clamp promptly after lockout.',
+      clamp: 'Clamp promptly after the crank locks.',
       why: 'A lockout head stops pulling the moment it trips. The string starts to relax right away, and any tension it loses before you clamp is gone for good. Being fast is not the point. What matters is a rhythm you repeat on every string, so each one is clamped at the same moment. Expect a slightly softer stringbed than the same number gives on a constant-pull machine.' },
     { id: 'electronic', name: 'Electronic constant-pull', short: 'electronic',
       reference: 'A load cell (a force sensor), accurate when calibrated, and it needs calibrating',
@@ -86,7 +88,7 @@ const Job = (function () {
       notice: 'Confirm tie-off holes, skipped holes and string routing against the frame or the maker’s instructions. Positions in the diagrams are only a guide.'
     },
     sandbox: {
-      id: 'sandbox', name: 'Explore the simulator',
+      id: 'sandbox', name: 'Explore other patterns',
       blurb: 'Try patterns the frame is not drilled for.',
       notice: 'Sandbox patterns only change the drawing. They may not match the holes drilled in the real racket.'
     }
@@ -94,15 +96,14 @@ const Job = (function () {
 
   /* ---------------- what the job is for ---------------- */
   /* What the job is for. The wizard no longer asks: every new job is
-     'practice'. It stays so saved jobs still load, and `stringMode` still
-     picks the wizard's string default. */
+     'practice'. It stays so saved jobs still load. */
   const PURPOSES = [
     { id: 'practice', name: 'Practicing on an old racket',
       blurb: 'Nothing is lost if it goes wrong, so it is the best way to learn.',
-      stringMode: 'recommend', notice: '' },
+      notice: '' },
     { id: 'play', name: 'Preparing a playable racket',
       blurb: 'Take the extra care, and check the frame’s own markings.',
-      stringMode: 'known', notice: '' }
+      notice: '' }
   ];
   const purpose = id => PURPOSES.find(p => p.id === id) || PURPOSES[0];
 
@@ -119,15 +120,15 @@ const Job = (function () {
              tMain: 55, tCross: 55, method: 'two', linkCross: true } },
     { id: 'comfort', name: 'Comfort',
       short: 'Soft multi, low in the range',
-      set: { racketId: 'ezone98', mainId: 'nxt', crossId: 'nxt', mainGauge: 1.30, crossGauge: 1.30,
+      set: { racketId: 'ezone98', mainId: 'multi', crossId: 'multi', mainGauge: 1.30, crossGauge: 1.30,
              tMain: 48, tCross: 46, method: 'two', linkCross: true } },
     { id: 'control', name: 'Control',
       short: 'Dense 18x20, stiff poly, high tension',
-      set: { racketId: 'blade98', mainId: 'alu', crossId: 'alu', mainGauge: 1.25, crossGauge: 1.25,
+      set: { racketId: 'blade98', mainId: 'poly', crossId: 'poly', mainGauge: 1.25, crossGauge: 1.25,
              tMain: 58, tCross: 56, method: 'two', linkCross: true } },
     { id: 'durability', name: 'Durability',
-      short: 'Hybrid with shaped poly mains',
-      set: { racketId: 'purestrike', mainId: 'tourbite', crossId: 'syngut', mainGauge: 1.25, crossGauge: 1.30,
+      short: 'Hybrid with poly mains',
+      set: { racketId: 'purestrike', mainId: 'poly', crossId: 'syngut', mainGauge: 1.25, crossGauge: 1.30,
              tMain: 52, tCross: 54, method: 'two', linkCross: false } }
   ];
 
@@ -143,14 +144,14 @@ const Job = (function () {
     mains:   'The strings that run up and down the racket, along its length.',
     crosses: 'The strings that run side to side, woven through the mains.',
     gauge:   'The thickness of the string, usually measured in millimetres. Thinner strings generally provide more feel, bite on the ball, and spin potential, but break more easily. Thicker strings are more durable and usually feel slightly firmer and more controlled.',
-    throat:  'The bottom of the hoop, where the frame narrows into the handle.',
-    head:    'The top of the hoop, furthest from the handle.',
+    throat:  'The end of the hoop where the frame narrows into the handle.',
+    head:    'The end of the hoop furthest from the handle.',
     grommet: 'The plastic sleeve in each hole that the string passes through, so it does not chafe on the frame.',
     'tie-off': 'The hole where a run of string is knotted off. Frames mark these holes, and they are usually a little larger than the rest.',
-    hybrid:  'Two different strings in one racket, one in the mains and another in the crosses. It has to be strung two-piece, with two separate lengths of string.',
+    hybrid:  'Two different kinds of string in one racket, one in the mains and another in the crosses. It has to be strung two-piece, with two separate lengths of string.',
     /* Words the interface uses without explaining them. Each is one line,
        shown only when asked for, so the bench stays as quiet as it was. */
-    'M/C': 'Mains / crosses, always in that order. In a string pattern, 16x19 means 16 mains and 19 crosses, and 18x20 means 18 mains and 20 crosses. In a tension, 55/53 lb means the mains at 55 lb and the crosses at 53 lb.',
+    'M/C': 'Short for mains and crosses, always in that order. In a string pattern, 16x19 means 16 mains and 19 crosses, and 18x20 means 18 mains and 20 crosses. In a tension, 55/53 lb means the mains at 55 lb and the crosses at 53 lb.',
     stiffness: 'A rough number for how firm the strings feel. Higher means firmer. It is an estimate, not a measurement.',
     'split tension': 'The mains and crosses do not have to be strung at the same tension. Some players lower the cross tension slightly to soften the stringbed or allow the mains to move more freely, while others use the same tension for both. In hybrid setups, the tensions may also be adjusted to account for differences in stiffness and elasticity between the two strings.',
     /* Poly is a LOW-power string; that is the whole point of it. What it gives
@@ -230,9 +231,9 @@ const Job = (function () {
      that no longer makes sense -- a racket that left the catalogue, a pattern
      that was removed, a hand-edited number -- is dropped, never trusted, and
      never allowed to stop the page loading. */
-  const SAVED = ['v', 'tab', 'sub', 'knot', 'card', 'sideCard', 'seenStart', 'mode', 'machineType', 'jobStatus',
+  const SAVED = ['v', 'tab', 'sub', 'knot', 'primerDone', 'card', 'sideCard', 'seenStart', 'mode', 'machineType', 'jobStatus',
                  'purpose', 'kind', 'crossKind',
-                 'racketId', 'pattern', 'mainId', 'crossId', 'mainColorIx', 'crossColorIx',
+                 'racketId', 'pattern', 'mainId', 'crossId',
                  'mainGauge', 'crossGauge', 'tMain', 'tCross', 'linkCross', 'linkTension', 'method',
                  'step', 'stepOpen', 'checked'];
 
@@ -265,14 +266,15 @@ const Job = (function () {
     const { rackets, strings, patterns, gauges } = catalogue;
     const take = (k, ok) => { if (ok(o[k])) state[k] = o[k]; };
 
+    // a frame merged into another under one name comes back as the one kept
+    if (typeof RACKET_ALIASES !== 'undefined' && RACKET_ALIASES[o.racketId]) o.racketId = RACKET_ALIASES[o.racketId];
     take('racketId', v => rackets.some(r => r.id === v));
     take('mainId',   v => strings.some(s => s.id === v));
     take('crossId',  v => strings.some(s => s.id === v));
     take('pattern',  v => v === 'stock' || patterns.includes(v));
     take('mainGauge',  v => gauges.includes(v));
     take('crossGauge', v => gauges.includes(v));
-    ['mainColorIx', 'crossColorIx', 'step'].forEach(k =>
-      take(k, v => Number.isFinite(v) && v >= 0));
+    take('step', v => Number.isFinite(v) && v >= 0);
     ['tMain', 'tCross'].forEach(k =>
       take(k, v => Number.isFinite(v) && v >= 35 && v <= 70));
     take('linkCross',    v => typeof v === 'boolean');
@@ -284,7 +286,13 @@ const Job = (function () {
     take('tab', v => ['racket', 'string', 'do', 'learn'].includes(v));
     take('sub', v => ['words', 'tension', 'knots', 'machines'].includes(v));
     take('knot', v => v === 'finish' || v === 'start');
-    take('card', v => Number.isInteger(v) && v >= 0 && v <= 3);
+    take('primerDone', v => typeof v === 'boolean');
+    /* The deck is Setup, Kind, Tension. Before version 3 it was Setup, Kind,
+       String, Tension, so an old index is moved to the card that took its
+       place: String becomes Kind, and Tension moves down one. */
+    const oldDeck = !(o.v >= 3);
+    take('card', v => Number.isInteger(v) && v >= 0 && v <= (oldDeck ? 3 : 2));
+    if (oldDeck && Number.isInteger(state.card)) state.card = [0, 1, 1, 2][state.card];
     take('mode', v => v === 'real' || v === 'sandbox');
     take('machineType', v => MACHINES.some(m => m.id === v));
     take('jobStatus', v => ['setup', 'active', 'complete'].includes(v));

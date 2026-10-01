@@ -166,7 +166,7 @@ const Geo = (function () {
     const pat = parsePattern(patternStr || racket.pattern);
     const H = hoopFor(racket);
 
-    // ---- mains: vertical, evenly spaced about the centre line -------------
+    // ---- mains: vertical, evenly spaced about the center line -------------
     const mainHalf = H.a * racket.mainSpan;
     const mainGap = (2 * mainHalf) / (pat.mains - 1);
     const mains = [];
@@ -234,7 +234,8 @@ const Geo = (function () {
      * And weaving does not add the same to both planes. A main runs essentially
      * straight between its grommets; a cross has to undulate over and under
      * every main it passes, which is where the extra length actually goes. */
-    const WEAVE_MAIN = 1.02, WEAVE_CROSS = 1.07;
+    // a cross bends a little more than a main, but only a couple of per cent
+    const WEAVE_MAIN = 1.02, WEAVE_CROSS = 1.02;
     /* Every string also goes through the hoop wall at both ends and runs round
        the outside of the frame to the next hole. Leaving that out made a one
        piece come up short at the tie-off: about 4 cm a string, 1.4 m on a
@@ -278,7 +279,7 @@ const Geo = (function () {
      *
      * Only the offset moved. The slope, the openness term and the head-size
      * term all behaved correctly -- they were putting the right DISTANCE
-     * between two setups, just centred on the wrong number. */
+     * between two setups, just centered on the wrong number. */
     const dt = 16.5 + 0.42 * (k / 200) * (13.2 / openness) * (95 / headSqIn);
 
     // weight of string actually in the bed (not the tails): area x length x density

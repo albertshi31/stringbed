@@ -16,16 +16,18 @@ const Wizard = (function () {
   const TITLES = {
     racket:  'Which racket?',
     machine: 'What are you stringing on?',
-    string:  'Which string?',
+    string:  'What kind of string?',
     review:  'Check it over'
   };
 
   const rk = () => RACKETS.find(r => r.id === draft.racketId);
-  const sg = () => STRINGS.find(s => s.id === draft.mainId);
+  const sg = () => STRINGS.find(s => s.type === draft.kind) || STRINGS[0];
+  /* Only the kind is asked. Synthetic gut is the one to learn on. */
+  const KINDS = ['Synthetic gut', 'Multifilament', 'Polyester', 'Natural gut'];
   const mid = r => Math.round((r.tension[0] + r.tension[1]) / 2);
   /* the same name the bench uses: no version suffix */
-  const modelName = r => r.model.replace(/\s+v\d+$/i, '');
-  const label = r => `${modelName(r)} · ${r.pattern} · ${r.headSize} in²`;
+  const modelName = racketName;
+  const label = r => `${modelName(r)} · ${r.pattern}`;
 
   /* One group per brand, models sorted by name. Pattern and head size ride
      along because two frames can share a name (a 16x19 and an 18x20). */
@@ -58,14 +60,13 @@ const Wizard = (function () {
           <select id="wzRacket">${racketOptions()}</select></label>
         <dl class="wz-facts">
           <div><dt>Stock pattern</dt><dd>${r.pattern}</dd></div>
-          <div><dt>Head size</dt><dd>${r.headSize} in²</dd></div>
           <div><dt>Throat holes</dt><dd>${r.throatPairs} sets</dd></div>
           <div><dt>Recommended tension</dt><dd>${r.tension[0]} to ${r.tension[1]} lb</dd></div>
         </dl>
-        <p class="hint">Its own pattern is used. You can try others later in the simulator.</p>
+        <p class="hint">Its own pattern is used. You can try others later on the Racket tab.</p>
         <!-- A catalogue of a few dozen frames will not hold someone's actual racket, and
              the failure mode is silent: they pick something that looks close
-             and trust its routing. Say what the simulator can and cannot tell
+             and trust its routing. Say what the app can and cannot tell
              them, and invent nothing about a frame that is not in here. -->
         <button type="button" class="btn ghost wz-unlisted" data-wz-unlisted
           aria-expanded="${draft.unlisted ? 'true' : 'false'}">My racket isn't listed</button>
@@ -76,30 +77,16 @@ const Wizard = (function () {
     machine: () => paneChoice('machineType', Job.MACHINES.map(m =>
       ({ v: m.id, t: m.name, d: m.clamp }))),
 
-    string: () => {
-      const r = rk();
-      const pick = draft.stringMode === 'recommend';
-      const syn = STRINGS.find(s => s.type === 'Synthetic gut');
-      return paneChoice('stringMode', [
-        { v: 'recommend', t: 'Recommend a practice string',
-          d: `${syn.name} at ${syn.gauge.toFixed(2)} mm, ${mid(r)} lb, the middle of this frame’s range.` },
-        { v: 'known', t: 'I know my string', d: 'Pick it yourself on the bench afterwards.' }
-      ]) + (pick ? `<p class="hint">Cheap and easy to weave, so good for learning.</p>` : '');
-    },
+    string: () => paneChoice('kind', KINDS.map(k => ({
+      v: k, t: k, d: k === 'Synthetic gut' ? 'Recommended' : ''
+    }))) + (draft.kind === 'Synthetic gut'
+      ? '<p class="hint">Cheap and easy to weave, so good for learning.</p>' : ''),
 
     review: () => {
       const r = rk(), s = sg();
       const bed = Geo.buildStringbed(r, r.pattern);
       const st = Geo.stats(r, bed, draft.tMain, draft.tCross, s, s, draft.gauge, draft.gauge);
-      /* Only a RECOMMENDED string is applied on Start -- "I know my string"
-         deliberately leaves the bench alone. So the review may not name one:
-         it used to print the recommendation either way, which meant the
-         summary you were asked to check over listed a string the app was
-         about to not set. Say what will actually happen instead. */
-      const picked = draft.stringMode === 'recommend';
-      const strung = plane => picked
-        ? `${s.name} · ${draft.gauge.toFixed(2)} mm · ${plane} lb`
-        : '<em>you choose it on the bench after this</em>';
+      const strung = plane => `${s.name} · ${draft.gauge.toFixed(2)} mm · ${plane} lb`;
       return `
         <dl class="wz-facts wz-review">
           <div><dt>Racket</dt><dd>${r.brand} ${modelName(r)}</dd></div>
@@ -108,7 +95,7 @@ const Wizard = (function () {
           <div><dt>Mains</dt><dd>${strung(draft.tMain)}</dd></div>
           <div><dt>Crosses</dt><dd>${strung(draft.tCross)}</dd></div>
           <div><dt>Method</dt><dd>${draft.method === 'one' ? 'One piece · 2 knots' : 'Two piece · 4 knots'}</dd></div>
-          <div><dt>String needed</dt><dd>${Fmt.metres(st.totalM)} · cut ${Fmt.metres(Fmt.cutTotal(st.totalM, draft.method === 'one'))}</dd></div>
+          <div><dt>String needed</dt><dd>${Fmt.metres(st.totalM)} · cut ${Fmt.metres(Fmt.cutFor(st, draft.method === 'one'))}</dd></div>
         </dl>`;
     }
   };
@@ -133,13 +120,12 @@ const Wizard = (function () {
     if (first) first.focus();
   }
 
-  /* the recommendation is recomputed from whatever racket is selected, so
-     going back and changing the frame moves the tension with it */
+  /* The thickness and tension follow the kind and the racket, so going back
+     and changing either moves them with it. */
   function applyRecommendation() {
-    if (draft.stringMode !== 'recommend') return;
-    const r = rk(), syn = STRINGS.find(s => s.type === 'Synthetic gut');
-    draft.mainId = draft.crossId = syn.id;
-    draft.gauge = syn.gauge;
+    const r = rk(), s = sg();
+    draft.mainId = draft.crossId = s.id;
+    draft.gauge = s.gauge;
     draft.tMain = draft.tCross = mid(r);
   }
 
@@ -181,10 +167,7 @@ const Wizard = (function () {
     draft = {
       purpose: 'practice', racketId: r.id, unlisted: false,
       machineType: current.machineType || 'dropweight',
-      stringMode: Job.purpose('practice').stringMode, method: 'two',
-      mainId: current.mainId, crossId: current.crossId,
-      gauge: current.mainGauge || STRINGS.find(s => s.id === current.mainId).gauge,
-      tMain: current.tMain, tCross: current.tCross
+      kind: 'Synthetic gut', method: 'two'
     };
     applyRecommendation();
     if (!host._wired) {

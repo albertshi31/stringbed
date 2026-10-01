@@ -283,7 +283,7 @@ const RacketSVG = (function () {
        cross-browser answer for how big it is. Chrome infers it from the
        explicit drawImage dimensions; Firefox does not, and rasterises nothing.
        Two attributes make the exported file self-describing. */
-    p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])}" width="${f(vb[2])}" height="${f(vb[3])}" class="racket-svg${o.animate ? ' animating' : ''}" role="img" aria-label="${esc(r.brand + ' ' + r.model + ' strung ' + bed.patternLabel)}">`);
+    p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])}" width="${f(vb[2])}" height="${f(vb[3])}" class="racket-svg${o.animate ? ' animating' : ''}" role="img" aria-label="${esc(r.brand + ' ' + racketName(r) + ' strung ' + bed.patternLabel)}">`);
 
     // ---------------- defs ----------------
     p.push('<defs>');
@@ -628,7 +628,7 @@ const RacketSVG = (function () {
     const stage = o.stage || 'done';          // empty | mains | crosses | done
     const showMains = stage !== 'empty';
     const showCrosses = stage === 'crosses' || stage === 'done';
-    const centreOnly = stage === 'start';   // just the two centre mains
+    const centreOnly = stage === 'start';   // just the two center mains
 
     const pace = o.pace || 0.045;            // seconds per string in the demo
     const clampGlyph = (x, y, dir, delay, still) => {
@@ -669,7 +669,7 @@ const RacketSVG = (function () {
           stroke="${ink}" stroke-width="1.6" marker-end="url(#pullArrow)"/>
       </g>`;
 
-    /* The order strings actually go in: centre pair first, then outwards,
+    /* The order strings actually go in: center pair first, then outwards,
      * alternating sides. Used by both the animation and the step-through. */
     const mainOrder = (() => {
       const mid = (bed.mains.length - 1) / 2;
@@ -698,7 +698,7 @@ const RacketSVG = (function () {
         const centrePair = stage === 'mains' && d < 1;   // strung in the last step
         if (centreOnly && d > 0.6) return;
         if (stepIdx && stage === 'mains' && rankOf(m) >= stepIdx) return;
-        // the beat stills draw both centre mains themselves, further down,
+        // the beat stills draw both center mains themselves, further down,
         // where the labels and the gripper that go with them are built
         if (beat) return;
         // In the demo the clamp goes on whichever end the tensioner is at, and
@@ -792,7 +792,7 @@ const RacketSVG = (function () {
       : null;
 
     if (o.startBeat) {
-      // Both centre mains are threaded first, FROM mainsStart -- so the loose
+      // Both center mains are threaded first, FROM mainsStart -- so the loose
        // ends hang out of the other end of the racket, which is where the first
        // pull and the first clamps happen. Then: clamp one, tension the other,
        // clamp that one too.
@@ -801,7 +801,7 @@ const RacketSVG = (function () {
       const b = o.startBeat, anchorBottom = (o.mainsStart || 'throat') === 'throat';
       const anchorY = m => anchorBottom ? m.bottom - 16 : m.top + 16;
       const pullY = m => anchorBottom ? m.top - 28 : m.bottom + 28;
-      // the two centre mains are ~13 mm apart, so two clamps at the same height
+      // the two center mains are ~13 mm apart, so two clamps at the same height
       // would overlap: stagger the second one further into the bed
       const pullClampY = (m, stagger) => {
         const off = 14 + (stagger ? 22 : 0);
@@ -810,8 +810,21 @@ const RacketSVG = (function () {
 
       /* labels sit on top of the frame and the strings, so each one gets a
          solid chip behind it -- plain text on a stringbed is unreadable */
+      const placed = [];          // chips already drawn this frame, so a later one steps clear
       const tag = (x, y, txt, side) => {
-        const fs = 10, w = txt.length * fs * 0.55 + 14, h = fs + 9;
+        /* labelScale lets a small on-screen drawing (a phone) ask for bigger
+           type, so the chip text never renders under ~10 px. A chip that would
+           then outgrow the box wraps onto a second line instead. */
+        const fs = 10 * Math.max(1, o.labelScale || 1);
+        const maxCh = Math.max(8, Math.floor((vb[2] - 20) / (fs * 0.55)));
+        const lines = [];
+        String(txt).split(' ').forEach(wd => {
+          const cur = lines[lines.length - 1];
+          if (cur !== undefined && (cur + ' ' + wd).length <= maxCh) lines[lines.length - 1] = cur + ' ' + wd;
+          else lines.push(wd);
+        });
+        const lh = fs * 1.2;
+        const w = Math.max(...lines.map(l => l.length)) * fs * 0.55 + 14, h = fs + 9 + lh * (lines.length - 1);
         /* The chips hang off the CENTRE mains, so a long one reaches most of a
            half-width sideways -- past the edge of the viewBox, which on a phone
            (the card is about 456 px wide) cut the label off against the left of
@@ -825,16 +838,25 @@ const RacketSVG = (function () {
            of the bed: there is always room there, and the chip is opaque so the
            strings behind it cost nothing. The leader goes diagonal and still
            lands on the hole. Half a clamp is 10 wide by 15 tall. */
-        const cy = (rx < x + 14 && rx + w > x - 14) ? y + (y > 0 ? -26 : 26) : y;
+        let cy = (rx < x + 14 && rx + w > x - 14) ? y + (y > 0 ? -(16 + h / 2) : 16 + h / 2) : y;
+        /* Bigger type makes wider chips, and two of them hanging off the
+           centre pair can then land on each other: step the newer one clear,
+           toward the middle of the bed. */
+        const inward = y > 0 ? -1 : 1;
+        placed.forEach(q => {
+          if (rx < q.x + q.w + 3 && rx + w > q.x - 3 && Math.abs(cy - q.y) < (h + q.h) / 2 + 3)
+            cy = q.y + inward * ((h + q.h) / 2 + 4);
+        });
+        placed.push({ x: rx, y: cy, w, h });
         const lead = x <= rx ? rx - 3 : rx + w + 3;
         return `<line x1="${f(x)}" y1="${f(y)}" x2="${f(lead)}" y2="${f(cy)}"
             stroke="${ink}" stroke-width="1.4" stroke-dasharray="4 3" stroke-opacity="0.95"/>
           <circle cx="${f(x)}" cy="${f(y)}" r="2.8" fill="${ink}"/>
           <rect x="${f(rx)}" y="${f(cy - h / 2)}" width="${f(w)}" height="${f(h)}" rx="5"
             fill="#080a0e" fill-opacity="0.92" stroke="${ink}" stroke-opacity="0.55" stroke-width="0.9"/>
-          <text x="${f(rx + 7)}" y="${f(cy + 3.6)}" text-anchor="start"
-            font-size="${fs}" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700"
-            fill="${ink2}">${txt}</text>`;
+          <text x="${f(rx + 7)}" y="${f(cy - lh * (lines.length - 1) / 2 + fs * 0.36)}" text-anchor="start"
+            font-size="${f(fs)}" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700"
+            fill="${ink2}">${lines.map((l, i) => i ? `<tspan x="${f(rx + 7)}" dy="${f(lh)}">${l}</tspan>` : l).join('')}</text>`;
       };
       const gripper = (x, y) => `<g transform="translate(${f(x)} ${f(y)})">
           <rect x="-10" y="-15" width="20" height="30" rx="4" fill="#4b525c"/>
@@ -965,12 +987,12 @@ const RacketSVG = (function () {
       const endOf = (m, top) => [m.x, top ? m.top : m.bottom];
       const bySide = { l: [], r: [] };
       bed.mains.forEach(m => bySide[m.x < 0 ? 'l' : 'r'].push(m));
-      bySide.l.sort((u, v) => v.x - u.x);          // centre outwards
+      bySide.l.sort((u, v) => v.x - u.x);          // center outwards
       bySide.r.sort((u, v) => u.x - v.x);
       let routes = '', grips = '';
       ['l', 'r'].forEach(k => {
         bySide[k].forEach((m, n) => {
-          if (n === 0) return;                 // centre pair came in last step
+          if (n === 0) return;                 // center pair came in last step
           const d = n + 0.5;
           const pulledTop = anchorBottom ? (n % 2 === 0) : (n % 2 === 1);
           const t0 = d * 2 * pace;
@@ -1040,8 +1062,14 @@ const RacketSVG = (function () {
             stroke="#05070b" stroke-opacity="0.7" stroke-width="3.6"/>
           <circle cx="${f(c[0])}" cy="${f(c[1])}" r="${yokeView ? 5.4 : 4.2}" fill="none"
             stroke="${ink}" stroke-width="1.8" stroke-opacity="0.95"/>`;
-        labels.push([c[0], c[1], Math.floor(i / 2) + 1]);
       });
+      /* counted left to right, one number for each pair of holes beside each
+         other: 1, 2, 3 for three sets, 1, 2, 3, 4 for four */
+      const ordered = marked.slice().sort((u, v) => u[0] - v[0]);
+      for (let k = 0; k + 1 < ordered.length; k += 2) {
+        const a = ordered[k], b = ordered[k + 1];
+        labels.push([(a[0] + b[0]) / 2, Math.max(a[1], b[1]) + 1.6, k / 2 + 1]);
+      }
       p.push(`<g class="throat-marks">${rings}</g>`);
     }
 
@@ -1080,23 +1108,25 @@ const RacketSVG = (function () {
     if (!headOnly) {
       p.push(`<text x="0" y="${f(shaftTop + 24)}" text-anchor="middle" font-size="8"
         font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="0.8"
-        fill="${ink2}" fill-opacity="0.75">${esc(r.model.toUpperCase())}</text>`);
+        fill="${ink2}" fill-opacity="0.75">${esc(racketName(r).toUpperCase())}</text>`);
     }
     // the stepped views have their own caption, and the badges live up here
     if (!beatView && !o.hideLabel) p.push(`<text x="0" y="${f(REF_TOP + (RIG ? 12 : 14))}" text-anchor="middle" font-size="9.5"
       font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="2.4"
-      fill="${ink2}" fill-opacity="0.55">${esc(bed.patternLabel.toUpperCase())} &#183; ${r.headSize} IN&#178;</text>`);
+      fill="${ink2}" fill-opacity="0.55">${esc(bed.patternLabel.toUpperCase())}</text>`);
 
     if (yokeView) {
       p.push('</g>');   // end squash
       // annotation lives outside the squash so the type is not distorted
       const cy = y => y * SQ;
       const brY = cy(bB + THROAT * 0.20);
-      p.push(`<line x1="0" y1="${f(vb[1] + 20)}" x2="0" y2="${f(brY - 4)}"
+      // the line stops above the numbers, so it never runs through one
+      const numTop = labels.length ? Math.min(...labels.map(l => cy(l[1]))) - 15 - 12 : brY - 4;
+      p.push(`<line x1="0" y1="${f(vb[1] + 20)}" x2="0" y2="${f(numTop)}"
         stroke="${ink}" stroke-opacity="0.55" stroke-width="1.2" stroke-dasharray="5 5"/>`);
-      p.push(`<text x="0" y="${f(vb[1] + 13)}" text-anchor="middle" font-size="7.5"
+      p.push(`<text x="0" y="${f(vb[1] + 13)}" text-anchor="middle" font-size="8.5"
         font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="0.5"
-        fill="${ink}" fill-opacity="0.85">CENTRE LINE</text>`);
+        fill="${ink}" fill-opacity="0.85">CENTER LINE</text>`);
       labels.forEach(([x, y, n]) => {
         p.push(`<text x="${f(x)}" y="${f(cy(y) - 15)}" text-anchor="middle" font-size="9.5"
           font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700"
@@ -1106,14 +1136,14 @@ const RacketSVG = (function () {
         const bx = yokeLimit + 4, by = brY;
         p.push(`<path d="M${f(-bx)},${f(by - 3)} L${f(-bx)},${f(by)} L${f(bx)},${f(by)} L${f(bx)},${f(by - 3)}"
           fill="none" stroke="${ink}" stroke-opacity="0.8" stroke-width="1.1"/>`);
-        p.push(`<text x="0" y="${f(by + 12)}" text-anchor="middle" font-size="7.5"
+        p.push(`<text x="0" y="${f(by + 13)}" text-anchor="middle" font-size="8.5"
           font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="0.6"
-          fill="${ink}" fill-opacity="0.9">THE YOKE &#183; ${o.markThroatPairs} SETS</text>`);
+          fill="${ink}" fill-opacity="0.9">THROAT HOLES &#183; ${o.markThroatPairs} SETS</text>`);
         [-1, 1].forEach(side => {
           p.push(`<text x="${f(side * (-vb[0] - 8))}" y="${f(cy(bB) - 6)}"
-            text-anchor="${side < 0 ? 'start' : 'end'}" font-size="6.5"
+            text-anchor="${side < 0 ? 'start' : 'end'}" font-size="8"
             font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600"
-            fill="${ink2}" fill-opacity="0.7">past the yoke</text>`);
+            fill="${ink2}" fill-opacity="0.7">not counted</text>`);
         });
       }
     }

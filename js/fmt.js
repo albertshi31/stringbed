@@ -36,7 +36,13 @@ const Fmt = (function () {
 
   /* What to measure off the reel: what the bed takes, plus an end's worth of
      working length for every free end the method leaves you with. */
-  const cutTotal = (m, onePiece) => up1(m + END_M * ends(onePiece));
+  /* A one piece is never cut shorter than 37 ft (11.3 m): running out at the
+     last cross means starting again, and a little spare costs nothing. */
+  const ONE_MIN_M = 11.3;
+  const cutTotal = (m, onePiece) => {
+    const c = up1(m + END_M * ends(onePiece));
+    return onePiece ? Math.min(SET_M, Math.max(ONE_MIN_M, c)) : c;
+  };
   const cutLength = m => cutTotal(m, false);        // kept for the summary card
 
   /* The two sides of a one piece, summing exactly to that total. The short side
@@ -63,11 +69,29 @@ const Fmt = (function () {
      wrong shape: the two bunches are independent lengths, and which of them is
      longer is not fixed -- an 18x20 needs more in the mains, a 16x20 more in
      the crosses. Sizing each from its own plane gets that right by itself. */
+  /* The mains piece gets longer tails than the crosses. The center pair is
+     pulled through the whole length before anything is clamped, and both ends
+     work outward, so the mains need more slack to reach the tension head. That
+     is why stringers cut the mains piece longer: about 20 ft and 17 to 18 ft on
+     a 16x19, which is the 37 to 38 ft most of them work to. */
+  const END_MAIN = 0.45, END_CROSS = 0.3;
   function cutPair(mainM, crossM) {
-    const mains = up1(mainM + 2 * END_M);
-    const crosses = up1(crossM + 2 * END_M);
+    let mains = up1(mainM + 2 * END_MAIN);
+    let crosses = up1(crossM + 2 * END_CROSS);
+    /* A standard 40 ft set strings every frame on two piece, so the two pieces
+       never add up to more than one. A dense frame is brought back inside it
+       in proportion, which keeps the mains the longer piece. */
+    if (mains + crosses > SET_M) {
+      const k = SET_M / (mains + crosses);
+      mains = Math.floor(mains * k * 10) / 10;
+      crosses = Math.floor(crosses * k * 10) / 10;
+    }
     return { mains: mains, crosses: crosses, total: round1(mains + crosses) };
   }
+  /* The one number to cut: the whole length on one piece, the two pieces added
+     up on two piece, so the total never disagrees with the pieces. */
+  const cutFor = (stats, onePiece) => (onePiece ? cutTotal(stats.totalM, true)
+                                                 : cutPair(stats.mainM, stats.crossM).total);
 
   /* The LOCAL calendar date. toISOString() is UTC, so an evening job in the
      Americas was logged as tomorrow. */
@@ -81,6 +105,6 @@ const Fmt = (function () {
   const article = w => (/^(8|11|18)/.test(String(w)) ? 'an' : 'a');
   const Article = w => (article(w) === 'an' ? 'An' : 'A');
 
-  return { FT, END_M, SET_M, round1, up1, cutLength, cutTotal, cutPair, splitOne, today,
+  return { FT, END_M, END_MAIN, END_CROSS, SET_M, ONE_MIN_M, round1, up1, cutLength, cutTotal, cutPair, cutFor, splitOne, today,
            metres, metresOnly, feet, article, Article };
 })();

@@ -1,6 +1,6 @@
 /* The STARTING knot: what anchors a two-piece cross bunch before the first
  * cross is tensioned. A different knot from the finishing tie-off, for a
- * different reason -- both sit against the OUTSIDE of the grommet, but a
+ * different reason -- both sit on the STRINGBED SIDE, snug against the grommet, but a
  * tie-off only has to hold a string that is already at tension, while this one
  * is pulled against on the very next stroke. So it is built for bulk.
  *
@@ -16,7 +16,7 @@
  *   4. Feed the tail UP through the first two loops: under each front band,
  *      over each back band, and out at the top.
  *   5. Pull the tail. The circuit closes, the wraps stack, and the knot cinches
- *      into a bulky mass against the outside of the grommet.
+ *      into a bulky mass on the stringbed side, snug against the grommet.
  *
  * Drawing over and under. The cord is one continuous path, so the crossings
  * cannot come from path order alone. Instead: the whole cord is laid down, the
@@ -28,11 +28,11 @@
  */
 const StartKnot = (function () {
 
-  const A = 88;                 // the anchor main's centre line
+  const A = 88;                 // the anchor main's center line
   const W = 7.5;                // cord width
   const AW = 9;                 // anchor width
   const WALL = 244;             // top of the frame wall
-  const MOUTH = WALL - 20;      // the hole's centre -- where a string ends
+  const MOUTH = WALL - 20;      // the hole's center -- where a string ends
   const VB = '0 0 200 272';
 
   const f = n => (Math.round(n * 10) / 10);
@@ -69,10 +69,10 @@ const StartKnot = (function () {
   const TOP = 52;               // the third wrap's pass across the front
   const TAIL_X = 66;            // the tail runs up INSIDE the loops, beside the anchor
   /* Where the tail comes out of the hole. Close to the main, because they share
-     that hole: at 102 it rose 14 from the main and 7 from the hole's own centre,
+     that hole: at 102 it rose 14 from the main and 7 from the hole's own center,
      so it left the mouth at the rim and read as coming out of the collar's
      shoulder rather than out of the hole. The two now sit either side of the
-     centre by the same amount, which is what the finishing diagram does. */
+     center by the same amount, which is what the finishing diagram does. */
   const TAIL_STAND = 99;
 
   // out of the grommet, up, then loop 1: over the front, round the left, under the back
@@ -151,13 +151,13 @@ const StartKnot = (function () {
      lays its grommet down first and runs the cord over it, so the string ends
      in the black oval, which is where a string going into a hole should end.
      What it took to make the hole READ as a hole:
-       - The hole is centred between the two strings, not on the main. Both
-         share it, and a hole centred on the main put the cross string out at
+       - The hole is centered between the two strings, not on the main. Both
+         share it, and a hole centered on the main put the cross string out at
          its rim -- so the cord came up out of grey metal, which is what looked
          wrong. `MOUTH` spans both cords with clearance either side.
        - The dark mouth is nearly as big as the collar's top face. An ellipse is
-         only at its highest above its own centre, so a narrow hole inside a
-         wide face leaves a band of metal above any cord that is off-centre, and
+         only at its highest above its own center, so a narrow hole inside a
+         wide face leaves a band of metal above any cord that is off-center, and
          the cord appears to sprout from the collar.
        - The whole thing is smaller. At 42x26 against a 7.5-wide cord it read as
          a boulder the knot was balanced on. */
@@ -277,8 +277,9 @@ const StartKnot = (function () {
         `<path d="M62,232 L48,232" stroke="${col.accent}" stroke-width="1.3"
            stroke-dasharray="3 3" fill="none"/>`,
         tag(120, 82, 'leave the tail', col, 'end'),
-        tag(6, 226, 'sits', col, 'start'),
-        tag(6, 238, 'outside', col, 'start'),
+        tag(6, 214, 'snug', col, 'start'),
+        tag(6, 226, 'against', col, 'start'),
+        tag(6, 238, 'grommet', col, 'start'),
         badge(22, 162, '5', col)
       ].join('');
     };
@@ -295,7 +296,7 @@ const StartKnot = (function () {
         alt: 'The cross string comes up through the grommet beside an already-tensioned main, crosses '
            + 'in front of that main, passes round and behind it, and does the same a second time higher '
            + 'up, making two loops.',
-        cap: 'The cross string comes up through the tie-off hole <b>alongside a main that is already '
+        cap: 'The cross string comes up through the starting hole <b>alongside a main that is already '
            + 'tensioned</b>. Both strings share that hole. Take the loose end <b>over the front</b> of that main, '
            + 'around it, and back <b>under</b> it from behind. Do it again just above the first. Now you have two loops.',
         svg: one() },
@@ -307,13 +308,13 @@ const StartKnot = (function () {
            + 'wrap. Now feed the loose end <b>up through both loops</b> and out of the top.',
         svg: two() },
       { n: 3, moves: '5', title: 'Tighten it, and leave the tail',
-        alt: 'Pulled tight, the wraps stack into a bulky knot resting against the outside of the '
+        alt: 'Pulled tight, the wraps stack into a bulky knot on the stringbed side, snug against the '
            + 'grommet. The tail is left long, not yet trimmed.',
         /* Trimming here was the old advice and it was wrong: the knot has not
            been loaded yet. Cut the tail now and a knot that creeps on the first
            pull cannot be retied. */
-        cap: 'Pull the loose end by hand until the wraps bunch up into a <b>bulky</b> knot seated against the '
-           + '<b>outside</b> of the grommet. <b>Leave the tail long</b>. The knot has not been tested by a tension pull yet, '
+        cap: 'Pull the loose end by hand until the wraps bunch up into a <b>bulky</b> knot on the '
+           + '<b>stringbed side</b>, snug against the grommet. <b>Leave the tail long</b>. The knot has not been tested by a tension pull yet, '
            + 'and you may need to tie it again.',
         svg: three() }
     ];
@@ -342,9 +343,9 @@ const StartKnot = (function () {
         <p class="sk-cap">${s.cap}</p>
       </li>`).join('') + `
       <li class="sk-nav">
-        <button type="button" class="btn ghost" data-skn="-1">Back</button>
+        <button type="button" class="btn ghost" data-skn="-1">Previous move</button>
         <span class="knot-count"></span>
-        <button type="button" class="btn primary" data-skn="1">Next step</button>
+        <button type="button" class="btn primary" data-skn="1">Next move</button>
       </li></ol>`;
   }
 
@@ -356,11 +357,11 @@ const StartKnot = (function () {
       li.classList.toggle('past', k < open);
       li.querySelector('.sk-b').setAttribute('aria-expanded', k === open ? 'true' : 'false');
     });
-    root.querySelector('.sk-nav .knot-count').textContent = `Step ${open + 1} of ${items.length}`;
+    root.querySelector('.sk-nav .knot-count').textContent = `Move ${open + 1} of ${items.length}`;
     root.querySelector('[data-skn="-1"]').disabled = open === 0;
     const nx = root.querySelector('[data-skn="1"]');
     nx.disabled = open === items.length - 1;
-    nx.textContent = open === items.length - 1 ? 'Last step' : 'Next step';
+    nx.textContent = open === items.length - 1 ? 'Last move' : 'Next move';
   }
 
   /* render into `root` and wire it; safe to call again when colours change */

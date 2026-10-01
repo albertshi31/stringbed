@@ -37,7 +37,7 @@ const Knot = (function () {
      larger ones -- and the tail is squeezed through the same hole alongside
      it. Drawing the anchor as a bar floating clear of the frame, with the
      grommet a separate slab underneath, showed two things that never touch. */
-  const PX = 110;                  // the post's centre line, once stood up
+  const PX = 110;                  // the post's center line, once stood up
   const ANCHOR_Y = 82;             // the anchor's line in the knot's own space
 
   /* THE KNOT IS AUTHORED FLAT AND STOOD UP AFTERWARDS.
@@ -391,7 +391,7 @@ const Knot = (function () {
 
     F.push({
       title: 'Pull it tight',
-      caption: 'Pull the <b>free end</b>, the one you just brought through the loop. The whole knot closes onto the anchor, down against the <b>outside</b> of the grommet. <b>Pull it tighter than this drawing shows.</b>',
+      caption: 'Pull the <b>free end</b>, the one you just brought through the loop. The whole knot closes onto the anchor, on the <b>stringbed side</b>, snug against the grommet. <b>Pull it tighter than this drawing shows.</b>',
       why: 'Do not pull the other part, the one coming out of the grommet. That side is already under tension, and pulling it just drags the knot along the anchor. A real knot closes into a small, hard lump with no gaps. The drawing keeps the turns open so you can still see which strand goes where.',
       svg: seat + upright(hitch(TIED, T, TIED.threaded) + cutEnd(eT[0], eT[1], 12))
         + anchorLabel
@@ -407,7 +407,7 @@ const Knot = (function () {
        second's lead are both dropped, and the gap is bridged by an even,
        monotonic run -- the clean vertical the reference shows. */
     /* The FIRST hitch is not moved at all, so its lead keeps the spacing it was
-       drawn with. Sliding both apart from the centre was what forced the lead
+       drawn with. Sliding both apart from the center was what forced the lead
        into the grommet and put the ripples in it. Only the second travels. */
     const A5 = T;
     const B5 = place(TIED, T, 48);
@@ -497,9 +497,9 @@ const Knot = (function () {
           <div class="knot-caption"></div>
         </div>
         <div class="knot-nav">
-          <button type="button" class="btn ghost" data-kn="-1">Back</button>
+          <button type="button" class="btn ghost" data-kn="-1">Previous move</button>
           <span class="knot-count"></span>
-          <button type="button" class="btn primary" data-kn="1">Next step</button>
+          <button type="button" class="btn primary" data-kn="1">Next move</button>
         </div>
       </div>`;
 
@@ -531,11 +531,11 @@ const Knot = (function () {
       });
       // the explanation opens under the step it belongs to
       stepsEl.insertBefore(body, btns[i].nextSibling);
-      el.querySelector('.knot-count').textContent = `Step ${i + 1} of ${F.length}`;
+      el.querySelector('.knot-count').textContent = `Move ${i + 1} of ${F.length}`;
       el.querySelector('[data-kn="-1"]').disabled = i === 0;
       const nx = el.querySelector('[data-kn="1"]');
       nx.disabled = i === F.length - 1;
-      nx.textContent = i === F.length - 1 ? 'Last step' : 'Next step';
+      nx.textContent = i === F.length - 1 ? 'Last move' : 'Next move';
     }
     function go(k) { i = Math.max(0, Math.min(F.length - 1, k)); draw(); }
 

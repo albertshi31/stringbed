@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=34">
+<link rel="stylesheet" href="styles.css?v=85">
 </head>
 <body>
 <div class="app" id="app">
@@ -120,44 +120,21 @@
           </section>
 
           <section class="fieldset card" hidden>
-            <h2>String</h2>
-            <div class="plane">
-              <h3 class="plane-h" id="planeMainH" hidden>Mains</h3>
-              <div class="with-swatch">
-                <label class="field grow"><span class="sr-only">Mains string</span>
-                  <select id="selMain"></select></label>
-                <div class="swatches" id="swMain" role="group" aria-label="Colour"></div>
-              </div>
-            </div>
-            <div class="plane" id="planeCross" hidden>
-              <h3 class="plane-h">Crosses</h3>
-              <div class="with-swatch">
-                <label class="field grow"><span class="sr-only">Cross string</span>
-                  <select id="selCross"></select></label>
-                <div class="swatches" id="swCross" role="group" aria-label="Cross colour"></div>
-              </div>
-            </div>
-            <p class="help" id="stringHelp"></p>
-          </section>
-
-          <section class="fieldset card" hidden>
             <h2>Tension</h2>
-            <div class="readout">
-              <b id="tMainVal" class="num"></b><span class="unit">lb</span>
-              <span class="readout-tag" id="tenRange"></span>
+            <p class="ten-range" id="tenRange"></p>
+            <div class="ten-grid">
+              <label class="ten-cell"><span id="tMainLab">Mains and crosses</span>
+                <span class="ten-box"><input id="tMain" type="number" inputmode="numeric" min="35" max="70"
+                  step="1" value="55"><span class="unit">lb</span></span></label>
+              <label class="ten-cell" id="tCrossWrap" hidden><span>Crosses</span>
+                <span class="ten-box"><input id="tCross" type="number" inputmode="numeric" min="35" max="70"
+                  step="1" value="55"><span class="unit">lb</span></span></label>
             </div>
-            <input id="tMain" type="range" min="35" max="70" step="1" value="52"
-              aria-label="Mains tension in pounds">
             <label class="check"><input type="checkbox" id="linkTension" checked>
-              <span>Crosses follow the mains</span></label>
-            <div id="tCrossWrap" hidden>
-              <div class="readout sub">
-                <b id="tCrossVal" class="num"></b><span class="unit">lb crosses</span>
-              </div>
-              <input id="tCross" type="range" min="35" max="70" step="1" value="50"
-                aria-label="Crosses tension in pounds">
-            </div>
+              <span>Mains and crosses have the same tension</span></label>
             <p class="help warn" id="tenWarn" role="status" hidden></p>
+            <p class="ten-tip">Some people string the crosses 2-3 lbs looser than the mains. Crosses are shorter
+              than mains, so this evens out the stringbed and adds a little launch, comfort, and spin.</p>
           </section>
 
           <div class="deck-foot">
@@ -181,8 +158,8 @@
               </details>
             </div>
             <span class="tool-msg" id="exportMsg" role="status" aria-live="polite"></span>
+            <p class="art-hint" id="stringHint"></p>
           </div>
-          <p class="stage-cap" id="stringHint"></p>
           <dl class="facts" id="stringFacts"></dl>
         </aside>
       </div>
@@ -196,6 +173,15 @@
             <h1>String it</h1>
             <p>Nine steps, in order. Tick each check as you go. Your place is saved.</p>
           </header>
+          <aside class="primer" id="primer">
+            <p><b>First time?</b> Read these in Learn before you start:</p>
+            <div class="primer-links">
+              <button type="button" class="linkbtn" data-goto="words">Words to know</button>
+              <button type="button" class="linkbtn" data-goto="tension">When and where to clamp</button>
+              <button type="button" class="linkbtn" data-goto="knot" data-knot="finish">The two knots</button>
+            </div>
+            <button type="button" class="btn tiny ghost primer-x" id="primerDone">Got it</button>
+          </aside>
           <div class="prog">
             <div class="prog-top">
               <span id="progText"></span>
@@ -214,6 +200,7 @@
               <b id="doCapT"></b>
             </div>
             <div class="stage-art" id="doArt"></div>
+            <p class="art-hint" id="doHint" hidden></p>
           </div>
           <div class="player" id="stepCtl">
             <div class="player-btns">
@@ -272,43 +259,44 @@
             <h3 class="ref-h">Where to clamp</h3>
           <figure class="clamp-fig">
             <div class="clamp-pair">
-          <svg class="clamp-svg" viewBox="0 0 300 150" role="img"
+          <svg class="clamp-svg" viewBox="0 0 520 150" role="img"
               aria-label="Close to the frame: the clamp is a few millimetres from the frame.">
-            <rect x="0.5" y="0.5" width="299" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
+            <rect x="0.5" y="0.5" width="519" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
             <path d="M14,18 l5,5 l9,-10" fill="none" stroke="var(--good)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
             <text x="36" y="23" class="cl-h" fill="var(--good)">Close to the frame</text>
-            <text x="207.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
-            <rect x="196" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
-            <rect x="196" y="52" width="4" height="88" fill="#59616c"/>
-            <path d="M10,96 H288" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
-            <path d="M272,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
+            <text x="427.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
+            <rect x="416" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
+            <rect x="416" y="52" width="4" height="88" fill="#59616c"/>
+            <path d="M10,96 H508" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
+            <path d="M492,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round"/>
-            <text x="288" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
-            <text x="180.0" y="77" class="cl-s" text-anchor="middle" fill="var(--ink-2)">clamp</text>
-            <rect x="169" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
-            <rect x="169" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
-            <path d="M192,126 H195" stroke="var(--good)" stroke-width="1.6" />
-            <path d="M192,121 v10 M195,121 v10" stroke="var(--good)" stroke-width="1.6"/>
-            <text x="192" y="140" class="cl-s" text-anchor="end" fill="var(--good)">a few mm</text>
+            <text x="508" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
+            <text x="410" y="77" class="cl-s" text-anchor="end" fill="var(--ink-2)">clamp</text>
+            <rect x="389" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <rect x="389" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <path d="M412,126 H415" stroke="var(--good)" stroke-width="1.6" />
+            <path d="M412,121 v10 M415,121 v10" stroke="var(--good)" stroke-width="1.6"/>
+            <path d="M386,126 H411" stroke="var(--good)" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="382" y="129.5" class="cl-s" text-anchor="end" fill="var(--good)">a few mm</text>
           </svg>
-          <svg class="clamp-svg" viewBox="0 0 300 150" role="img"
-              aria-label="Out in the stringbed: the clamp is far from the frame, out in the stringbed.">
-            <rect x="0.5" y="0.5" width="299" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
+          <svg class="clamp-svg" viewBox="0 0 520 150" role="img"
+              aria-label="Too far from the frame: the clamp is far from the frame, out in the stringbed.">
+            <rect x="0.5" y="0.5" width="519" height="149" rx="9" fill="var(--well)" stroke="var(--line)"/>
             <path d="M15,13 l11,11 M26,13 l-11,11" fill="none" stroke="var(--warn)" stroke-width="2.6" stroke-linecap="round"/>
-            <text x="36" y="23" class="cl-h" fill="var(--warn)">Out in the stringbed</text>
-            <text x="207.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
-            <rect x="196" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
-            <rect x="196" y="52" width="4" height="88" fill="#59616c"/>
-            <path d="M10,96 H288" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
-            <path d="M272,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
+            <text x="36" y="23" class="cl-h" fill="var(--warn)">Too far from the frame</text>
+            <text x="427.0" y="46" class="cl-s" text-anchor="middle" fill="#aeb6c2">frame</text>
+            <rect x="416" y="52" width="22" height="88" rx="4" fill="#3a4049"/>
+            <rect x="416" y="52" width="4" height="88" fill="#59616c"/>
+            <path d="M10,96 H508" stroke="#f2f0ea" stroke-width="3.6" stroke-linecap="round"/>
+            <path d="M492,88 l12,8 l-12,8" fill="none" stroke="var(--accent)" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round"/>
-            <text x="288" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
-            <text x="41.0" y="77" class="cl-s" text-anchor="middle" fill="var(--ink-2)">clamp</text>
-            <rect x="30" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
-            <rect x="30" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
-            <path d="M53,126 H195" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="4 3"/>
-            <path d="M53,121 v10 M195,121 v10" stroke="var(--warn)" stroke-width="1.6"/>
-            <text x="124.0" y="119" class="cl-s" text-anchor="middle" fill="var(--warn)">lots of free string</text>
+            <text x="508" y="80" class="cl-s" text-anchor="end" fill="var(--accent)">to tensioner</text>
+            <text x="51.0" y="77" class="cl-s" text-anchor="middle" fill="var(--ink-2)">clamp</text>
+            <rect x="40" y="82" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <rect x="40" y="100" width="22" height="10" rx="2.5" fill="#9aa3b0" stroke="#05070a" stroke-width="1.2"/>
+            <path d="M63,126 H415" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="4 3"/>
+            <path d="M63,121 v10 M415,121 v10" stroke="var(--warn)" stroke-width="1.6"/>
+            <text x="239.0" y="119" class="cl-s" text-anchor="middle" fill="var(--warn)">lots of free string</text>
           </svg>
             </div>
           </figure>
@@ -349,8 +337,8 @@
       <div class="sub" id="sub-knots" role="tabpanel" aria-labelledby="sub-btn-knots" hidden>
         <div class="knot-page">
           <p class="lede-p">A string job uses <b>two different knots</b>. One <b>starts</b> a run, the
-          other <b>finishes</b> one. Both sit outside the grommet (the plastic tube the string passes
-          through). The difference is how bulky each one needs to be.</p>
+          other <b>finishes</b> one. Both sit on the stringbed side, snug against the grommet (the plastic sleeve
+          the string passes through). The difference is how bulky each one needs to be.</p>
 
           <div class="knot-pick" id="knotPicker" role="tablist" aria-label="Which knot">
             <button type="button" class="knot-tab on" role="tab" id="ktab-finish"
@@ -370,8 +358,8 @@
             <div class="knot-layout">
               <div class="knot-figure"><div class="knot-mount" id="knotMount"></div></div>
               <div class="knot-aside">
-                <p class="warn"><b>Check:</b> the finished knot sits firmly against the
-                <b>outside</b> of the grommet or the frame. Trim the end to about 4&nbsp;mm.</p>
+                <p class="warn"><b>Check:</b> the finished knot sits on the
+                <b>stringbed side</b>, snug against the grommet. Trim the end to about 4&nbsp;mm.</p>
                 <details class="why">
                   <summary>More detail</summary>
                   <p>The knot is called a <b>double half hitch</b>. Zoom in on the diagram to see which
@@ -412,12 +400,12 @@
                   <h4>Where the knot is tied</h4>
                   <p>In the frame's marked <b>starting hole</b>, next to the first cross. A <b>tensioned
                   main</b> already runs through it. Feed the cross string through the same hole, beside that
-                  main, and tie the knot <b>around the main</b>, against the outside of the grommet. It is the
+                  main, and tie the knot <b>around the main</b>, on the stringbed side, snug against the grommet. It is the
                   same setup as a finishing tie-off. Only the bulk is different.</p>
                   <p>From there the string runs along the outside of the frame to the next hole, the
                   <b>first cross hole</b>, and into the stringbed as the first cross.</p>
-                  <p>Bulk is the difference between this knot and the finishing tie-off. Both sit outside
-                  the grommet, but this one gets pulled on straight away, so it has to be fat enough not to
+                  <p>Bulk is the difference between this knot and the finishing tie-off. Both sit on the
+                  stringbed side, snug against the grommet, but this one gets pulled on straight away, so it has to be fat enough not to
                   slip through the hole.</p>
                   <h4>A variation you may see</h4>
                   <p>As you pull the tail through, a third loop opens up. That is the big loop closing
@@ -457,7 +445,7 @@
         <div class="start-opts">
           <button type="button" class="start-opt" data-start="wizard">
             <b>Guide me through my first job</b>
-            <span>Four questions, then straight into the steps.</span></button>
+            <span>A few quick questions, then straight into the steps.</span></button>
           <button type="button" class="start-opt" data-start="direct">
             <b>I know my setup</b>
             <span>Go straight to the bench.</span></button>
@@ -477,18 +465,20 @@
   <div class="modal" id="throatModal"></div>
 </div>
 
-<script src="js/fmt.js?v=34"></script>
-<script src="js/rackets.js?v=34"></script>
-<script src="js/strings.js?v=34"></script>
-<script src="js/geometry.js?v=34"></script>
-<script src="js/racketSvg.js?v=34"></script>
-<script src="js/steps.js?v=34"></script>
-<script src="js/throat.js?v=34"></script>
-<script src="js/knot.js?v=34"></script>
-<script src="js/startKnot.js?v=34"></script>
-<script src="js/machines.js?v=34"></script>
-<script src="js/job.js?v=34"></script>
-<script src="js/wizard.js?v=34"></script>
-<script src="js/app.js?v=34"></script>
+<script src="js/fmt.js?v=85"></script>
+<script src="js/rackets.js?v=85"></script>
+<script src="js/strings.js?v=85"></script>
+<script src="js/geometry.js?v=85"></script>
+<script src="js/racketSvg.js?v=85"></script>
+<script src="js/steps.js?v=85"></script>
+<script src="js/throat.js?v=85"></script>
+<script src="js/knot.js?v=85"></script>
+<script src="js/startKnot.js?v=85"></script>
+<script src="js/machines.js?v=85"></script>
+<script src="js/job.js?v=85"></script>
+<script src="js/wizard.js?v=85"></script>
+<script src="js/holes.js?v=85"></script>
+<script src="js/weaveQuiz.js?v=85"></script>
+<script src="js/app.js?v=85"></script>
 </body>
 </html>

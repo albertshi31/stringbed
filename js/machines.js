@@ -26,7 +26,7 @@ const MachineGuide = (function () {
     },
     {
       id: 'crank',
-      name: 'Crank / lockout',
+      name: 'Crank (lockout)',
       price: '$400 to $1,200',
       job: 'crank',
       how: 'Fast, mechanical and easy to live with. The classic club machine.',

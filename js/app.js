@@ -15,14 +15,13 @@
   const state = {
     racketId: 'ps97',
     mainId: 'syngut', crossId: 'syngut',
-    mainColorIx: 0, crossColorIx: 0,
     mainGauge: null, crossGauge: null,
     tMain: 55, tCross: 55,
     linkCross: true, linkTension: true, crossKind: 'Synthetic gut',
     method: 'two', machineType: 'dropweight',
     kind: 'Synthetic gut',
     step: 0, stepOpen: true, startBeat: 1, stringStep: 0, card: 0,
-    tab: 'racket', sub: 'words', knot: 'finish', checked: {},
+    tab: 'racket', sub: 'words', knot: 'finish', primerDone: false, checked: {},
     seenStart: false, jobStatus: 'setup', purpose: 'practice',
     mode: 'real', pattern: 'stock', sideCard: 'racket'
   };
@@ -35,7 +34,7 @@
      part of the label in a dropdown. */
   const VARIANT = /^(MP|Pro|Tour|ISO|XTD|LS?|P)$/i;
   function splitModel(r) {
-    const name = r.model.replace(/\s+v\d+$/i, '');
+    const name = racketName(r);
     const toks = name.split(/\s+/);
     /* The family is everything before the first size or variant token. The
        first token is always family, or "Pro Staff" would file under "Pro". */
@@ -61,9 +60,8 @@
   const racket = () => RACKETS.find(r => r.id === state.racketId) || RACKETS[0];
   const brandOf = () => racket().brand;
   const str = id => STRINGS.find(s => s.id === id) || STRINGS[0];
-  const hexOf = (s, ix) => (s.colors[ix] || s.colors[0]).hex;
-  const mainHex = () => hexOf(str(state.mainId), state.mainColorIx);
-  const crossHex = () => hexOf(str(state.crossId), state.crossColorIx);
+  const mainHex = () => str(state.mainId).color;
+  const crossHex = () => str(state.crossId).color;
 
   const KINDS = ['Synthetic gut', 'Multifilament', 'Polyester', 'Natural gut'];
   const KIND_BLURB = {
@@ -73,6 +71,13 @@
     'Natural gut': 'The most elastic and comfortable there is, and the most expensive.'
   };
   const ofKind = k => STRINGS.filter(s => s.type === k);
+  /* Only the kind is chosen, so a kind is also its one catalogue entry. */
+  const idOfKind = k => (ofKind(k)[0] || str('syngut')).id;
+
+  /* What the string is, in words: the kind and its thickness when one kind
+     fills the bed, both kinds when it is a hybrid. */
+  const stringWords = (sM, sC, gauge) =>
+    sM.id === sC.id ? `${sM.name} ${gauge.toFixed(2)} mm` : `${sM.name} / ${sC.name}`;
 
   /* ---------------- theme ---------------- */
   function rgb(h) {
@@ -120,11 +125,10 @@
   function normalizeState() {
     if (crossLocked()) {
       state.crossId = state.mainId;
-      state.crossColorIx = state.mainColorIx;
       state.crossKind = state.kind;
     } else {
       if (KINDS.indexOf(state.crossKind) < 0) state.crossKind = str(state.crossId).type;
-      if (str(state.crossId).type !== state.crossKind) state.crossId = ofKind(state.crossKind)[0].id;
+      if (str(state.crossId).type !== state.crossKind) state.crossId = idOfKind(state.crossKind);
     }
     state.linkCross = !hybrid();
     state.crossGauge = state.mainGauge;          // one thickness control, both planes
@@ -156,6 +160,7 @@
       stage: stage, animate: animate, crop: crop, throatPairs: c.throatPairs,
       pace: opts && opts.pace, clampDemo: opts && opts.clampDemo,
       startBeat: opts && opts.startBeat, markScale: opts && opts.markScale,
+      labelScale: opts && opts.labelScale,
       highlightYoke: opts && opts.highlightYoke, markThroatPairs: opts && opts.markThroatPairs,
       stepIndex: opts && opts.stepIndex, tension: opts && opts.tension,
       mountRig: opts && opts.mountRig, hideLabel: opts && opts.hideLabel,
@@ -213,8 +218,7 @@
     return [r.id, r.pattern, s.method, s.mainId, s.crossId, s.tMain, s.tCross, gM, gC].join('|');
   }
   const KEY_FIELDS = ['racketId', 'method', 'mainId', 'crossId', 'tMain', 'tCross',
-                      'mainGauge', 'crossGauge', 'mainColorIx', 'crossColorIx',
-                      'linkCross', 'linkTension', 'kind', 'crossKind'];
+                      'mainGauge', 'crossGauge', 'linkCross', 'linkTension', 'kind', 'crossKind'];
 
   /* Changing the frame, string, tension, gauge or method starts a DIFFERENT
      job, and the checklist belongs to the old one. Propose the change, see
@@ -237,10 +241,10 @@
 
   /* ---------------- the spec strip ---------------- */
   function renderSpec(c) {
-    const cut = Fmt.cutTotal(c.stats.totalM, state.method === 'one');
+    const cut = Fmt.cutFor(c.stats, state.method === 'one');
     el('specStrip').innerHTML = [
       ['Frame', modelName(c.r)],
-      ['String', c.sM.name + (state.crossId !== state.mainId ? ' / ' + c.sC.name : '')],
+      ['String', stringWords(c.sM, c.sC, c.gM)],
       ['Tension', state.tMain === state.tCross ? state.tMain + ' lb'
           : state.tMain + ' / ' + state.tCross + ' lb'],
       ['Cut', Fmt.metresOnly(cut)]
@@ -274,14 +278,12 @@
          A list of one-frame groups is a heading above every line, which reads
          as twice the list it is -- and it prints the family name twice, once as
          the label and once inside the model it labels. */
-      const grouped = fams.some(g => g.models.length > 1);
       const opt = (r, label) =>
-        `<option value="${r.id}">${label} · ${r.pattern} · ${r.headSize} in²</option>`;
-      el('selModel').innerHTML = grouped
-        ? fams.map(g => `<optgroup label="${g.family}">`
-            + g.models.map(r => opt(r, modelName(r))).join('')
-            + '</optgroup>').join('')
-        : fams.map(g => g.models.map(r => opt(r, modelName(r))).join('')).join('');
+        `<option value="${r.id}">${label} · ${r.pattern}</option>`;
+      // only a family with more than one frame gets a heading
+      el('selModel').innerHTML = fams.map(g => g.models.length > 1
+          ? `<optgroup label="${g.family}">` + g.models.map(r => opt(r, modelName(r))).join('') + '</optgroup>'
+          : g.models.map(r => opt(r, modelName(r))).join('')).join('');
       el('selModel').dataset.brand = brandOf();
     }
     el('selModel').value = state.racketId;
@@ -295,11 +297,12 @@
   }
 
   /* ---------------- 2 · string ---------------- */
-  /* The string screen is four decisions, and all four on one page meant the one
-     you were making had no more weight than the three you were not. A deck: one
-     card at a time, the rail above it showing where you are AND what you have
-     already chosen, so nothing is hidden -- only quiet. */
-  const CARDS = ['Setup', 'Kind', 'String', 'Tension'];
+  /* The string screen is three decisions, and all three on one page meant the
+     one you were making had no more weight than the others. A deck: one card at
+     a time, the rail above it showing where you are AND what you have already
+     chosen, so nothing is hidden, only quiet. Only the kind of string is asked,
+     never a brand or model. */
+  const CARDS = ['Setup', 'Kind', 'Tension'];
   const cardEls = () => all('#tab-string .card');
 
   const pair = (a, b) => (a === b ? a : a + ' / ' + b);
@@ -307,7 +310,6 @@
     if (i === 0) return `${(state.mainGauge || c.sM.gauge).toFixed(2)} mm · `
       + `${state.method === 'one' ? 'One' : 'Two'} piece`;
     if (i === 1) return pair(state.kind, state.crossKind);
-    if (i === 2) return pair(c.sM.name, c.sC.name);
     return pair(state.tMain + ' lb', state.tCross + ' lb');
   }
 
@@ -341,36 +343,31 @@
     markSeg('crossKindSeg', 'kind', state.crossKind);
 
     /* The second plane's controls exist only where a second plane does. */
-    ['kindMainH', 'kindCrossWrap', 'planeMainH', 'planeCross']
-      .forEach(id => { el(id).hidden = !two; });
+    ['kindMainH', 'kindCrossWrap'].forEach(id => { el(id).hidden = !two; });
 
     el('kindHelp').textContent = (KIND_BLURB[state.kind] || '')
       + (two && state.kind !== state.crossKind
           ? ` A hybrid: ${state.kind.toLowerCase()} mains, ${state.crossKind.toLowerCase()} crosses.` : '');
 
-    scopeList('selMain', state.kind, state.mainId);
-    scopeList('selCross', state.crossKind, state.crossId);
 
-    el('stringHelp').textContent = !two
-      ? 'One piece is one physical string, so it runs through both planes.'
-      : (hybrid()
-          ? `A hybrid: ${c.sM.name} in the mains, ${c.sC.name} in the crosses.`
-          : 'The same string in both planes. Change either one to make it a hybrid.');
-    renderSwatches();
-
-    el('tMainVal').textContent = state.tMain;
-    el('tCrossVal').textContent = state.tCross;
+    el('tMainLab').textContent = state.linkTension ? 'Mains and crosses' : 'Mains';
     el('tMain').value = state.tMain;
     el('tCross').value = state.tCross;
     el('linkTension').checked = state.linkTension;
     el('tCrossWrap').hidden = state.linkTension;
     const lo = c.r.tension[0], hi = c.r.tension[1];
-    el('tenRange').textContent = `${c.r.brand} says ${lo} to ${hi}`;
-    const out = [['Mains', state.tMain], ['Crosses', state.tCross]]
-      .filter(x => x[1] < lo || x[1] > hi)
-      .map(x => `${x[0]} ${x[1]} lb is ${x[1] < lo ? 'below' : 'above'} the range`);
-    el('tenWarn').hidden = !out.length;
-    el('tenWarn').textContent = out.length ? out.join('. ') + '. That is allowed, but check the frame first.' : '';
+    el('tenRange').textContent = `${c.r.brand} recommends ${lo} to ${hi} lb for this frame.`;
+    /* one short line, naming both planes at once when they are out the same way */
+    const side = v => (v < lo ? 'below' : v > hi ? 'above' : '');
+    const sm = side(state.tMain), sc = side(state.tCross);
+    const same = state.linkTension || state.tMain === state.tCross;
+    let warn = '';
+    if (same && sm) warn = `${state.tMain} lb is ${sm} ${c.r.brand}'s range.`;
+    else if (sm && sm === sc) warn = `Mains and crosses are ${sm} ${c.r.brand}'s range.`;
+    else if (sm || sc) warn = [sm && `Mains are ${sm}`, sc && `Crosses are ${sc}`].filter(Boolean).join(' and ')
+      + ` ${c.r.brand}'s range.`;
+    el('tenWarn').hidden = !warn;
+    el('tenWarn').textContent = warn ? warn + ' Standard tensions are between 48-60 lb.' : '';
 
     if (!el('selGauge').options.length)
       el('selGauge').innerHTML = GAUGES.map(g =>
@@ -381,22 +378,21 @@
     markSeg('machineSeg', 'machine', state.machineType);
     el('setupHelp').textContent = (state.method === 'one'
       ? 'One piece uses 2 knots and one string all the way through. '
-      : 'Two piece uses 4 knots, and the mains and crosses can be different strings. ')
+      : 'Two piece uses 4 knots, and the mains and crosses can be different kinds of string. ')
       + Job.machine(state.machineType).clamp;
     renderDeck(c);
 
     el('stringArt').innerHTML = RacketSVG.render(svgOpts(c, 'done', animate, 'head'));
     /* The markers are the only thing on the page that can be touched without
        looking like a control, so the page has to say so. */
-    el('stringHint').innerHTML = `<b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
+    el('stringHint').innerHTML = `<span><b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
       + (touchOnly() ? '. Tap a marker to see how to tie that knot.'
-                     : '. Hover over a marker to see what it is, or click it for the knot diagram.');
+                     : '. Hover over a marker to see what it is, or click it for the knot diagram.') + '</span>';
 
     const s = c.stats;
-    const cut = Fmt.cutTotal(s.totalM, state.method === 'one');
+    const cut = Fmt.cutFor(s, state.method === 'one');
     facts('stringFacts', [
-      ['Cut', Fmt.metresOnly(cut), cut <= Fmt.SET_M ? `A ${Fmt.SET_M} m set covers it`
-                                                     : `A ${Fmt.SET_M} m set is tight`],
+      ['Cut', Fmt.metresOnly(cut), `A ${Fmt.SET_M} m set covers it`],
       [term('stiffness', 'Feel estimate'), s.feel, `About ${s.dt.toFixed(0)} on the stiffness scale`]
     ]);
   }
@@ -406,30 +402,6 @@
   function facts(id, rows) {
     el(id).innerHTML = rows.map(r =>
       `<div><dt>${r[0]}</dt><dd>${r[1]}${r[2] ? `<em>${r[2]}</em>` : ''}</dd></div>`).join('');
-  }
-
-  const scopeList = (id, kind, value) => {
-    const sel = el(id);
-    if (sel.dataset.kind !== kind) {
-      sel.innerHTML = ofKind(kind).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-      sel.dataset.kind = kind;
-    }
-    sel.value = value;
-  };
-
-  function renderSwatches() {
-    [['swMain', 'mainId', 'mainColorIx'], ['swCross', 'crossId', 'crossColorIx']].forEach(function (t) {
-      const id = t[0], sid = t[1], cix = t[2];
-      const s = str(state[sid]);
-      if (state[cix] >= s.colors.length) state[cix] = 0;
-      const lock = id === 'swCross' && crossLocked();
-      el(id).innerHTML = s.colors.map((col, i) => {
-        const on = i === state[cix];
-        return `<button type="button" class="sw ${on ? 'on' : ''}" data-t="${cix}" data-i="${i}"
-          aria-pressed="${on}" ${lock ? 'disabled' : ''} title="${col.name}"
-          style="--sw:${col.hex}"><span class="sr-only">${col.name}</span></button>`;
-      }).join('');
-    });
   }
 
   const markSeg = (id, attr, val) => all('#' + id + ' button').forEach(b => {
@@ -482,6 +454,7 @@
     state.jobKey = key;
     buildSteps(c);
 
+    stageHome();
     el('steps').innerHTML = steps.map((s, i) => {
       const open = i === state.step && state.stepOpen;
       const checks = s.checks.filter(Boolean);
@@ -489,7 +462,7 @@
           ${i < state.step ? 'past' : ''} ${stepDone(i) ? 'done' : ''}" data-i="${i}">
         <button type="button" class="step-h" aria-expanded="${open}">
           <span class="step-n">${stepDone(i) ? '&#10003;' : i + 1}</span>
-          <span class="step-t"><b>${s.title}</b><em>${s.lede}</em></span>
+          <span class="step-t"><b>${s.title}</b></span>
         </button>
         <div class="step-b">
           ${s.body}
@@ -501,16 +474,18 @@
           <div class="cta-row">
             ${i > 0 ? '<button type="button" class="btn ghost" data-step-prev>Back</button>' : ''}
             ${i === steps.length - 1
-              ? `<button type="button" class="btn primary" data-finish
-                  ${Job.progress(steps, state).complete ? 'disabled' : ''}>
-                  ${Job.progress(steps, state).complete ? 'Finished' : 'Finish'}</button>`
+              ? '<button type="button" class="btn primary" data-finish>Finish</button>'
+                + (Job.progress(steps, state).complete
+                  ? '<button type="button" class="btn ghost" data-new-job>String another racket</button>' : '')
               : '<button type="button" class="btn primary" data-step-next>Done → next step</button>'}
           </div>
         </div>
       </li>`;
     }).join('');
 
+    el('primer').hidden = !!state.primerDone;
     syncProgress();
+    placeStage();
     el('jobNotice').textContent = Job.purpose(state.purpose).notice || '';
     renderStage(c);
   }
@@ -547,7 +522,12 @@
     } else if (st.id === 'mount') {
       view = RacketSVG.render(svgOpts(c, 'empty', false, 'head', { mountRig: true, noKnots: true }));
     } else if (st.id === 'start') {
-      view = RacketSVG.render(svgOpts(c, 'start', false, 'head', { startBeat: state.startBeat || 1 }));
+      /* On a phone this drawing is pinned small (24vh, see styles.css), so
+         its chip labels are scaled up to stay at ~10 px or more on screen.
+         470 is about the beat view's viewBox height. */
+      const px = narrow() ? 0.24 * (window.innerHeight || 800) / 470 : 1;
+      view = RacketSVG.render(svgOpts(c, 'start', false, 'head',
+        { startBeat: state.startBeat || 1, labelScale: px < 1 ? 10.5 / (10 * px) : 1 }));
     } else if (st.id === 'mains') {
       const n = c.bed.mains.length, k = state.stringStep, tie = k === n - 1;
       view = RacketSVG.render(svgOpts(c, 'mains', !k, 'head',
@@ -564,6 +544,23 @@
       view = RacketSVG.render(svgOpts(c, 'done', false, 'head', { markScale: 1.4 }));
     }
     el('doArt').innerHTML = view;
+    // which drawing is up, so the stylesheet can size each one for a phone
+    const stageBox = stageEl();
+    if (stageBox) stageBox.dataset.view = st.id;
+    // the knot markers are easy to miss, so say they can be opened
+    const hasKnots = /class="knot"/.test(view);
+    /* the string-by-string frames number their three actions on the racket
+       (racketSvg.js stepped view): 1 pull it through / weave it, 2 tension
+       it, 3 clamp it. Say so, or the numbers read as an order of strings. */
+    const hasBadges = /class="hint-dot"/.test(view);
+    const key = !hasBadges ? '' : st.id === 'crosses'
+      ? '<b>1</b> weave it through · <b>2</b> tension it · <b>3</b> clamp it'
+      : '<b>1</b> pull it through · <b>2</b> tension it · <b>3</b> clamp it';
+    const knotLine = !hasKnots ? '' : touchOnly()
+      ? 'Tap a marker to see which knot goes there.'
+      : 'Hover over a marker to see which knot goes there. Click it to learn the knot.';
+    el('doHint').hidden = !(key || knotLine);
+    el('doHint').innerHTML = [key, knotLine].filter(Boolean).map(t => '<span>' + t + '</span>').join('<br>');
     // the walk-through card for the moment on screen is the selected one
     all('#steps .cycle-card[data-beat]').forEach(b => {
       const on = st.id === 'start' && +b.dataset.beat === (state.startBeat || 1);
@@ -596,8 +593,10 @@
     const last = stringFrames(c, st), k = state.stringStep || 0;
     const scrub = el('stringScrub');
     scrub.max = String(last);
-    scrub.value = String(k || last);
-    scrub.style.setProperty('--fill', ((k || last) - 1) / Math.max(1, last - 1) * 100 + '%');
+    /* the animated whole step sits at the start of the track: a thumb at the
+       far right read as "finished" before anything had been strung */
+    scrub.value = String(k || 1);
+    scrub.style.setProperty('--fill', ((k || 1) - 1) / Math.max(1, last - 1) * 100 + '%');
     el('stringLabel').textContent = stringLabel(c, st, k);
     el('btnPrevString').disabled = k === 1;
     el('btnNextString').disabled = k === last;
@@ -647,6 +646,44 @@
                              'flying clamps']]
   ];
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  /* The moment to clamp, drawn for each machine: the dropweight's bar level,
+     the crank locking out, the electronic head holding a steady reading. */
+  const CLAMP_ART = (() => {
+    const A = '#4cc9e0', G = '#79cfa4', M = '#8f9aa7', F = '#3a4049', E = '#05070a', W = '#e6ebf2';
+    const svg = b => `<svg viewBox="0 0 120 90" class="mc-svg">${b}</svg>`;
+    return {
+      dropweight: svg(`
+        <rect x="6" y="30" width="22" height="46" rx="3" fill="${F}"/>
+        <path d="M17,48 L112,48" stroke="${G}" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <path d="M17,48 L104,26" stroke="${M}" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+        <path d="M17,48 L104,48" stroke="${W}" stroke-width="4" stroke-linecap="round"/>
+        <rect x="74" y="38" width="16" height="20" rx="2" fill="${M}" stroke="${E}" stroke-width="1.2"/>
+        <circle cx="17" cy="48" r="4" fill="${W}" stroke="${E}" stroke-width="1.2"/>
+        <path d="M100,30 q6,8 0,14" fill="none" stroke="${A}" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M97,41 l3,3 l3,-4" fill="none" stroke="${A}" stroke-width="1.6" stroke-linecap="round"/>
+        <text x="60" y="72" text-anchor="middle" class="mc-l" fill="${G}">level</text>`),
+      crank: svg(`
+        <rect x="6" y="28" width="30" height="44" rx="3" fill="${F}"/>
+        <circle cx="72" cy="50" r="22" fill="none" stroke="${M}" stroke-width="3"/>
+        <path d="M72,50 L88,32" stroke="${W}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="88" cy="32" r="4.5" fill="${W}" stroke="${E}" stroke-width="1.2"/>
+        <circle cx="72" cy="50" r="3.5" fill="${W}"/>
+        <path d="M50,44 a22,22 0 0 1 12,-15" fill="none" stroke="${A}" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M58,26 l5,2 l-2,5" fill="none" stroke="${A}" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="98" y="16" width="14" height="11" rx="2" fill="${G}"/>
+        <path d="M101,16 v-3 a4,4 0 0 1 8,0 v3" fill="none" stroke="${G}" stroke-width="1.8"/>
+        <path d="M94,34 l-4,3 M98,37 l-1,5 M102,34 l3,4" stroke="${A}" stroke-width="1.4" stroke-linecap="round"/>
+        <text x="72" y="86" text-anchor="middle" class="mc-l" fill="${G}">locks</text>`),
+      electronic: svg(`
+        <rect x="8" y="8" width="104" height="30" rx="4" fill="${F}"/>
+        <text x="60" y="29" text-anchor="middle" class="mc-num" fill="${G}">55.0 lb</text>
+        <path d="M12,80 L12,50 M12,80 L112,80" stroke="${M}" stroke-width="1"/>
+        <path d="M14,78 C28,78 30,54 44,54 L108,54" fill="none" stroke="${A}" stroke-width="2.2"/>
+        <circle cx="84" cy="54" r="4" fill="${G}" stroke="${E}" stroke-width="1"/>
+        <text x="84" y="70" text-anchor="middle" class="mc-l" fill="${G}">steady</text>`)
+    };
+  })();
+
   function renderLearn() {
     /* each term folds shut, so the list reads as an index you open into */
     const term = (k, def) => `<details class="gl"><summary><span class="gl-caret" aria-hidden="true"></span>${cap(k)}</summary><p>${def}</p></details>`;
@@ -657,7 +694,8 @@
     /* one row per machine, from the same data the Machines tab reads, so the
        two tabs cannot disagree about when to clamp */
     el('ttMachines').innerHTML = Job.MACHINES.map(m =>
-      `<li class="mc"><span class="mc-k">${m.name}</span><b>${m.clamp}</b></li>`).join('');
+      `<li class="mc"><div class="mc-art" aria-hidden="true">${CLAMP_ART[m.id] || ''}</div>
+        <div class="mc-t"><span class="mc-k">${m.name}</span><b>${m.clamp}</b></div></li>`).join('');
   }
 
   let knotLesson = 'finish';
@@ -717,15 +755,20 @@
   };
 
   /* ---------------- navigation ---------------- */
+  let backTab = 'do';
   function showBack(on) {
     const b = el('backToStep');
     b.hidden = !on;
-    if (on) b.textContent = `\u2190 Back to step ${state.step + 1}`;
+    if (!on) return;
+    backTab = state.tab === 'learn' ? backTab : state.tab;
+    b.textContent = backTab === 'do' ? `\u2190 Back to step ${state.step + 1}`
+      : `\u2190 Back to ${{ racket: 'Racket', string: 'String' }[backTab] || 'where you were'}`;
   }
   function showTab(name) {
     if (['racket', 'string', 'do', 'learn'].indexOf(name) < 0) name = 'racket';
-    if (name !== 'learn') showBack(false);
+    if (name !== 'learn') el('backToStep').hidden = true;
     state.tab = name;
+    hideTip();
     clearTimeout(stringTimer); stringTimer = null;
     all('.tab').forEach(t => {
       const on = t.dataset.tab === name;
@@ -768,7 +811,7 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
   const fileBase = () => (cache.r.brand + '-' + modelName(cache.r) + '-' + cache.bed.patternLabel
-      + '-' + cache.sM.name + '-' + state.tMain + (state.tCross !== state.tMain ? '-' + state.tCross : '') + 'lb')
+      + '-' + stringWords(cache.sM, cache.sC, cache.gM) + '-' + state.tMain + (state.tCross !== state.tMain ? '-' + state.tCross : '') + 'lb')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const exportSvg = () => RacketSVG.render(svgOpts(cache, 'done', false, 'full'));
   function saveSvg() {
@@ -810,18 +853,24 @@
   }
 
   /* ---------------- tooltip ---------------- */
+  let hideTip = () => {};
   function initTooltip() {
     const tip = document.createElement('div');
     tip.className = 'tip'; tip.setAttribute('role', 'tooltip');
     document.body.appendChild(tip);
     let on = null;
     const move = (x, y) => {
-      const r = tip.getBoundingClientRect();
+      const r = tip.getBoundingClientRect(), W = window.innerWidth, M = 8;
       let left = x + 14, top = y - r.height - 12;
-      if (left + r.width > window.innerWidth - 10) left = x - r.width - 14;
-      if (top < 8) top = y + 18;
+      if (left + r.width > W - M) left = x - r.width - 14;
+      // on a narrow screen neither side may fit, so keep it inside the screen
+      left = Math.max(M, Math.min(left, W - r.width - M));
+      if (top < M) top = y + 18;
       tip.style.left = left + 'px'; tip.style.top = top + 'px';
     };
+    hideTip = () => { on = null; tip.classList.remove('on'); };
+    // the tip is fixed to the screen, so it would float off its word on scroll
+    window.addEventListener('scroll', () => { if (on) hideTip(); }, { passive: true });
     const fill = g => {
       if (g.dataset.term) {
         const lab = g.cloneNode(true);
@@ -831,7 +880,8 @@
         return;
       }
       tip.innerHTML = `<b>${g.dataset.label}</b>${g.dataset.note ? '<span>' + g.dataset.note + '</span>' : ''}`
-        + (g.classList.contains('knot') ? '<em>Click to see how to tie this knot</em>' : '');
+        + (g.classList.contains('knot')
+          ? `<em>${touchOnly() ? 'Tap again' : 'Click'} to see how to tie this knot</em>` : '');
     };
     const show = (g, x, y) => { fill(g); tip.classList.add('on'); move(x, y); };
     const pick = e => (e.target.closest ? e.target.closest('.knot, .hint-dot, .term') : null);
@@ -844,14 +894,28 @@
       if (g) { if (g !== on) { on = g; show(g, e.clientX, e.clientY); } else move(e.clientX, e.clientY); }
       else if (on) { on = null; tip.classList.remove('on'); }
     });
+    /* A marker is a small target on a phone and some sit close together, so a
+       tap anywhere on the racket takes the nearest marker within reach. */
+    const near = e => {
+      const svg = e.target.closest ? e.target.closest('.racket-svg') : null;
+      if (!svg) return null;
+      let best = null, bd = 40;
+      svg.querySelectorAll('.knot, .hint-dot').forEach(k => {
+        const r = k.getBoundingClientRect();
+        const d = Math.hypot(r.left + r.width / 2 - e.clientX, r.top + r.height / 2 - e.clientY);
+        if (d < bd) { bd = d; best = k; }
+      });
+      return best;
+    };
     document.addEventListener('click', e => {
-      const g = pick(e);
+      const g = pick(e) || near(e);
       if (!g) { if (on) { on = null; tip.classList.remove('on'); } return; }
       if (g === on && g.classList.contains('knot')) {
         /* The marker says which knot it is. Every tie-off is the finishing
            knot; only the one that starts a two-piece cross bunch is the other
            lesson, and landing on the wrong one is worse than not linking. */
         selectKnot(g.dataset.lesson === 'start' ? 'start' : 'finish');
+        showBack(true);
         showTab('learn'); showSub('knots');
         return;
       }
@@ -904,19 +968,15 @@
     state.racketId = d.racketId;
     state.machineType = d.machineType;
     state.method = d.method;
-    if (d.stringMode === 'recommend') {
-      state.mainId = state.crossId = d.mainId;
-      state.kind = state.crossKind = str(d.mainId).type;
-      state.mainGauge = state.crossGauge = d.gauge;
-      state.mainColorIx = state.crossColorIx = 0;
-      state.tMain = d.tMain; state.tCross = d.tCross;
-      state.linkCross = true; state.linkTension = false;
-    }
+    state.kind = state.crossKind = KINDS.indexOf(d.kind) < 0 ? 'Synthetic gut' : d.kind;
+    state.mainId = state.crossId = idOfKind(state.kind);
+    state.mainGauge = state.crossGauge = d.gauge;
+    state.tMain = d.tMain; state.tCross = d.tCross;
+    state.linkCross = true; state.linkTension = false;
     state.step = 0; state.stepOpen = true; state.checked = {}; state.jobStatus = 'active';
     hideStart();
     mountKnots();
-    // the review told them they choose the string next, so take them there
-    showTab(d.stringMode === 'recommend' ? 'do' : 'string');
+    showTab('do');
   }
 
   /* ---------------- events ---------------- */
@@ -948,14 +1008,65 @@
     } catch (e) { /* no viewport */ }
   }
 
+  /* On a phone the steps and the drawing are one column, and the drawing sat
+     above all nine steps, out of sight of the one being read. There it moves
+     into the open step, under its title; on a wide screen it stays beside. */
+  const narrow = () => { try { return window.matchMedia('(max-width: 900px)').matches; } catch (e) { return false; } };
+  const stageEl = () => el('tab-do').querySelector('.stage');
+  function stageHome() {
+    const st = stageEl(), home = el('tab-do').querySelector('.layout-do');
+    if (st && st.parentElement !== home) home.appendChild(st);
+  }
+  function placeStage() {
+    const st = stageEl(), body = document.querySelector('#steps .step.on > .step-b');
+    if (narrow() && body) {
+      body.insertBefore(st, body.firstChild);
+      const head = document.querySelector('.top');
+      document.documentElement.style.setProperty('--hdr', (head ? head.getBoundingClientRect().height : 104) + 'px');
+    } else stageHome();
+  }
+  try { window.matchMedia('(max-width: 900px)').addEventListener('change', placeStage); } catch (e) { /* old browsers */ }
+
   /* Finish either confirms the job or says what is still open, and takes you
      there. It used to try to go to a step after the last one, which did nothing. */
   function finishJob() {
     const open = firstOpenStep();
-    if (open < 0) { render(false); return; }
+    if (open < 0) { render(false); confetti(); return; }
     el('finishMsg').dataset.on = '1';
     navAt = 0; goStep(open);
     syncFinishMsg();
+  }
+
+  /* A little celebration for a finished racket: confetti falling down the
+     screen for a few seconds. Skipped when the device asks for less motion. */
+  function confetti() {
+    if (reduceMotion()) return;
+    const cv = document.createElement('canvas');
+    cv.className = 'confetti';
+    const W = cv.width = window.innerWidth, H = cv.height = window.innerHeight;
+    document.body.appendChild(cv);
+    const ctx = cv.getContext('2d');
+    if (!ctx) { cv.remove(); return; }
+    const cols = ['#4cc9e0', '#9fdcea', '#79cfa4', '#e8b268', '#e6ebf2', '#f28fad'];
+    const bits = Array.from({ length: 160 }, () => ({
+      x: Math.random() * W, y: -20 - Math.random() * H * 0.6,
+      w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+      vx: -1.5 + Math.random() * 3, vy: 2 + Math.random() * 3,
+      r: Math.random() * Math.PI, vr: -0.2 + Math.random() * 0.4,
+      c: cols[Math.floor(Math.random() * cols.length)]
+    }));
+    const t0 = performance.now();
+    const frame = t => {
+      ctx.clearRect(0, 0, W, H);
+      bits.forEach(b => {
+        b.vy += 0.05; b.x += b.vx + Math.sin((t + b.r * 500) / 400); b.y += b.vy; b.r += b.vr;
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r);
+        ctx.fillStyle = b.c; ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h * Math.abs(Math.cos(b.r)));
+        ctx.restore();
+      });
+      if (t - t0 < 4200) requestAnimationFrame(frame); else cv.remove();
+    };
+    requestAnimationFrame(frame);
   }
 
   const firstOpenStep = () =>
@@ -982,8 +1093,11 @@
   }
 
   function bind() {
+    el('primerDone').addEventListener('click', () => {
+      state.primerDone = true; el('primer').hidden = true; save();
+    });
     el('backToStep').addEventListener('click', () => {
-      showTab('do'); revealStep(true);
+      showTab(backTab); if (backTab === 'do') revealStep(true);
     });
     el('tabs').addEventListener('click', e => {
       const b = e.target.closest('.tab'); if (!b) return;
@@ -1020,9 +1134,15 @@
            destinations — 'tension', 'knot'. Those are Learn sub-tabs now, so
            they are translated here rather than edited out of steps.js. */
         const to = g.dataset.goto;
+        // a link inside a pop-up leaves the pop-up behind
+        if (g.closest('.modal')) all('.modal.on').forEach(m => m.classList.remove('on'));
         if (to === 'throat') { openThroat(); return; }
+        if (to === 'grommets') { Holes.open('grommets'); return; }
+        if (to === 'starthole') { Holes.open('start'); return; }
+        if (to === 'weavequiz') { WeaveQuiz.open(); return; }
         // leaving the guide for a lesson: offer the way back to the same step
-        if (state.tab === 'do' && (to === 'tension' || to === 'knot')) showBack(true);
+        if (state.tab === 'do' && (to === 'tension' || to === 'knot' || to === 'words')) showBack(true);
+        if (to === 'words') { showTab('learn'); showSub('words'); return; }
         if (to === 'tension') { showTab('learn'); showSub('tension'); return; }
         if (to === 'knot') {
           if (g.dataset.knot) knotLesson = g.dataset.knot;
@@ -1055,10 +1175,12 @@
     el('kindSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-kind]'); if (!b || b.disabled) return;
       if (!guardConfig(() => {
+        /* The crosses come along unless a hybrid was chosen on purpose. Leaving
+           them behind turned one tap on the mains into a hybrid nobody asked for. */
+        const wasSame = state.crossKind === state.kind;
         state.kind = b.dataset.kind;
-        state.mainId = ofKind(state.kind)[0].id;
-        state.mainColorIx = 0;
-        if (crossLocked()) { state.crossKind = state.kind; state.crossId = state.mainId; }
+        state.mainId = idOfKind(state.kind);
+        if (crossLocked() || wasSame) { state.crossKind = state.kind; state.crossId = state.mainId; }
       })) { render(false); return; }
       render(false); mountKnots();
       if (crossLocked()) goCard(2);
@@ -1067,29 +1189,11 @@
       const b = e.target.closest('[data-kind]'); if (!b || b.disabled) return;
       if (!guardConfig(() => {
         state.crossKind = b.dataset.kind;
-        state.crossId = ofKind(state.crossKind)[0].id;
-        state.crossColorIx = 0;
+        state.crossId = idOfKind(state.crossKind);
       })) { render(false); return; }
       render(false); mountKnots();
       goCard(2);
     });
-    el('selMain').addEventListener('change', e => {
-      if (!guardConfig(() => {
-        state.mainId = e.target.value; state.mainColorIx = 0;
-      })) { render(false); return; }
-      render(false); mountKnots();
-    });
-    el('selCross').addEventListener('change', e => {
-      if (!guardConfig(() => {
-        state.crossId = e.target.value; state.crossColorIx = 0;
-      })) { render(false); return; }
-      render(false); mountKnots();
-    });
-    all('.swatches').forEach(w => w.addEventListener('click', e => {
-      const b = e.target.closest('.sw'); if (!b) return;
-      state[b.dataset.t] = +b.dataset.i;
-      render(false); mountKnots();
-    }));
 
     let tenBefore = null;
     const tenStart = () => { if (!tenBefore) tenBefore = { tMain: state.tMain, tCross: state.tCross }; };
@@ -1098,19 +1202,25 @@
       if (before) keepChecks(before);
       render(false);
     };
+    /* Typed, not dragged. A half-typed number ("5" on the way to "55") is left
+       alone until it is a real tension; Enter or leaving the box settles it,
+       pulled into 35 to 70 lb if it is outside. */
+    const typed = v => { const n = Number(v); return v !== '' && n >= 35 && n <= 70 ? Math.round(n) : null; };
     el('tMain').addEventListener('input', e => {
-      tenStart();
-      state.tMain = clampTen(e.target.value);
-      if (state.linkTension) state.tCross = state.tMain;
-      el('tMainVal').textContent = state.tMain;
-      el('tCrossVal').textContent = state.tCross;
+      const v = typed(e.target.value); if (v === null) return;
+      tenStart(); state.tMain = v;
+      if (state.linkTension) state.tCross = v;
     });
-    el('tMain').addEventListener('change', tenCommit);
     el('tCross').addEventListener('input', e => {
-      tenStart(); state.tCross = clampTen(e.target.value);
-      el('tCrossVal').textContent = state.tCross;
+      const v = typed(e.target.value); if (v === null) return;
+      tenStart(); state.tCross = v;
     });
-    el('tCross').addEventListener('change', tenCommit);
+    ['tMain', 'tCross'].forEach(id => el(id).addEventListener('change', e => {
+      const v = clampTen(e.target.value === '' ? state[id] : e.target.value);
+      tenStart(); state[id] = v; e.target.value = v;
+      if (id === 'tMain' && state.linkTension) state.tCross = v;
+      tenCommit();
+    }));
     el('linkTension').addEventListener('change', e => {
       state.linkTension = e.target.checked;
       if (state.linkTension) state.tCross = state.tMain;
@@ -1130,7 +1240,6 @@
         if (b.dataset.m === 'one') {          // one string, so the crosses follow
           state.crossKind = state.kind;
           state.crossId = state.mainId;
-          state.crossColorIx = state.mainColorIx;
         }
       })) { render(false); return; }
       render(false); selectKnot(knotLesson);
@@ -1168,6 +1277,7 @@
       }
       if (e.target.closest('[data-step-next]')) { goStep(state.step + 1); return; }
       if (e.target.closest('[data-finish]')) { finishJob(); return; }
+      if (e.target.closest('[data-new-job]')) { openWizard(); return; }
       if (e.target.closest('[data-step-prev]')) { goStep(state.step - 1); return; }
       const m = e.target.closest('[data-method]');
       if (m) {
@@ -1299,13 +1409,14 @@
   function restore() {
     const o = Job.load(DEFAULTS, { rackets: RACKETS, strings: STRINGS, patterns: PATTERNS, gauges: GAUGES });
     Object.keys(o).forEach(k => (state[k] = o[k]));
-    /* The kind segments must always agree with the strings actually selected --
-       a saved job whose string has left the catalogue falls back to a real one,
-       and the kind has to follow it. */
-    if (KINDS.indexOf(state.kind) < 0 || str(state.mainId).type !== state.kind)
-      state.kind = str(state.mainId).type;
-    if (KINDS.indexOf(state.crossKind) < 0 || str(state.crossId).type !== state.crossKind)
-      state.crossKind = str(state.crossId).type;
+    /* The saved KIND is what counts. Older saves named a particular string
+       ('alu', 'nxt' and so on) that is no longer in the catalogue, so the
+       string is always worked out again from the kind, and a missing kind
+       means synthetic gut. */
+    if (KINDS.indexOf(state.kind) < 0) state.kind = 'Synthetic gut';
+    if (KINDS.indexOf(state.crossKind) < 0) state.crossKind = state.kind;
+    state.mainId = idOfKind(state.kind);
+    state.crossId = idOfKind(state.crossKind);
   }
 
   /* ---------------- boot ---------------- */
