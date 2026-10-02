@@ -360,13 +360,13 @@ const Steps = (function () {
           `<b>Repeat</b> thread, tension, clamp, <b>alternating sides</b>, so neither side gets more than one
            main ahead. Keep going until the last main on each side.`,
           onePiece
-            ? `Tie off the <b>short side only</b> at the ${pl.mainsEnd} with the ${tieLink('finishing tie-off')}.
+            ? `Tie off the <b>short side only</b> at the ${pl.mainsEnd} with the <span class="nobr">${tieLink('finishing tie-off')}.</span>
                The long side is left free and carries on into the crosses.`
             : `Tie both ends off at the marked ${pl.mainsEnd} ${g('tie-off')} holes with the
-               ${tieLink('finishing tie-off')}. Keep the clamp on until the knot is pulled tight.`
+               <span class="nobr">${tieLink('finishing tie-off')}.</span> Keep the clamp on until the knot is pulled tight.`
         ],
         watch: `If you just use the next free hole, a main can end up in a hole meant for a cross. If a grommet
-          looks more <button type="button" class="linkbtn inline-link" data-goto="grommets">horizontal</button>,
+          looks more <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="grommets">horizontal</button>,</span>
           it is probably meant for a cross string.`,
         detail: `<p><b>Why balance matters.</b> If you do several mains on one side before going back to the other,
             the frame is pulled unevenly until you catch up. Over time that can warp the racket.</p>
@@ -389,13 +389,13 @@ const Steps = (function () {
             ? `The long side comes out of the last main at the <b>${pl.mainsEnd}</b> and goes straight into
                the first cross, with no starting knot needed.`
             : `Tie the <b>starting knot</b> around the main in the marked
-               <button type="button" class="linkbtn inline-link" data-goto="starthole">starting hole</button>,
+               <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="starthole">starting hole</button>,</span>
                next to the first cross. Then run the string along the outside of the frame into the first cross hole.`,
           `Weave each cross over one main and under the next, all the way across. Pull the whole length
            through before you tension it.`,
           `Tension it, then clamp close to the frame.`,
           `Straighten that cross with your fingers before moving on.`,
-          `Tie off the final cross at the ${crossEndEnd} with the ${tieLink('finishing tie-off')}. Keep the
+          `Tie off the final cross at the ${crossEndEnd} with the <span class="nobr">${tieLink('finishing tie-off')}.</span> Keep the
            clamp on until the knot is pulled tight.`
         ],
         extra: `<p class="step-tip"><b>Tip:</b> ${weaveTip}</p>

@@ -816,7 +816,9 @@ const RacketSVG = (function () {
            type, so the chip text never renders under ~10 px. A chip that would
            then outgrow the box wraps onto a second line instead. */
         const fs = 10 * Math.max(1, o.labelScale || 1);
-        const maxCh = Math.max(8, Math.floor((vb[2] - 20) / (fs * 0.55)));
+        // bold type runs wider than 0.55 em a letter; the scaled-up phone chips showed it
+        const cw = (o.labelScale || 1) > 1 ? 0.6 : 0.55;
+        const maxCh = Math.max(8, Math.floor((vb[2] - 20) / (fs * cw)));
         const lines = [];
         String(txt).split(' ').forEach(wd => {
           const cur = lines[lines.length - 1];
@@ -824,7 +826,7 @@ const RacketSVG = (function () {
           else lines.push(wd);
         });
         const lh = fs * 1.2;
-        const w = Math.max(...lines.map(l => l.length)) * fs * 0.55 + 14, h = fs + 9 + lh * (lines.length - 1);
+        const w = Math.max(...lines.map(l => l.length)) * fs * cw + 14, h = fs + 9 + lh * (lines.length - 1);
         /* The chips hang off the CENTRE mains, so a long one reaches most of a
            half-width sideways -- past the edge of the viewBox, which on a phone
            (the card is about 456 px wide) cut the label off against the left of

@@ -386,7 +386,7 @@
     /* The markers are the only thing on the page that can be touched without
        looking like a control, so the page has to say so. */
     el('stringHint').innerHTML = `<span><b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
-      + (touchOnly() ? '. Tap a marker to see how to tie that knot.'
+      + (touchOnly() ? '. Tap a marker to see which knot it is.'
                      : '. Hover over a marker to see what it is, or click it for the knot diagram.') + '</span>';
 
     const s = c.stats;
@@ -581,7 +581,7 @@
     return st.id === 'crosses' ? c.bed.crosses.length + 1 : c.bed.mains.length - 1;
   }
   function stringLabel(c, st, k) {
-    if (!k) return 'Whole step, animated';
+    if (!k) return 'Whole step';
     if (st.id === 'crosses') {
       const n = c.bed.crosses.length;
       return k > n ? 'Crosses tied off' : `Cross ${k} of ${n}`;
@@ -854,6 +854,27 @@
 
   /* ---------------- tooltip ---------------- */
   let hideTip = () => {};
+  function knotSheet(g) {
+    let host = el('knotSheet');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'modal'; host.id = 'knotSheet';
+      document.body.appendChild(host);
+      host.addEventListener('click', e => {
+        if (e.target.closest('.modal-back, .modal-x')) host.classList.remove('on');
+      });
+    }
+    const lesson = g.dataset.lesson === 'start' ? 'start' : 'finish';
+    host.innerHTML = `<div class="modal-back"></div>
+      <div class="modal-card ks-card" role="dialog" aria-modal="true" aria-label="${g.dataset.label}">
+        <button class="modal-x" aria-label="Close">&times;</button>
+        <p class="ks-kind">${lesson === 'start' ? 'Starting knot' : 'Finishing tie-off'}</p>
+        <h2 class="ks-h">${g.dataset.label}</h2>
+        ${g.dataset.note ? `<p class="ks-note">${g.dataset.note}</p>` : ''}
+        <button type="button" class="btn primary ks-go" data-goto="knot" data-knot="${lesson}">See how to tie it</button>
+      </div>`;
+    host.classList.add('on');
+  }
   function initTooltip() {
     const tip = document.createElement('div');
     tip.className = 'tip'; tip.setAttribute('role', 'tooltip');
@@ -910,6 +931,13 @@
     document.addEventListener('click', e => {
       const g = pick(e) || near(e);
       if (!g) { if (on) { on = null; tip.classList.remove('on'); } return; }
+      /* On a phone a hover tooltip is no use and the markers are small, so a
+         tap opens a card that names the knot, with a button to its lesson. */
+      if (touchOnly() && g.classList.contains('knot')) {
+        on = null; tip.classList.remove('on');
+        knotSheet(g);
+        return;
+      }
       if (g === on && g.classList.contains('knot')) {
         /* The marker says which knot it is. Every tie-off is the finishing
            knot; only the one that starts a two-piece cross bunch is the other
@@ -1003,7 +1031,9 @@
     const rail = document.querySelector('#tab-do .prog');
     const pinned = rail && getComputedStyle(rail).position === 'sticky'
       ? rail.getBoundingClientRect().height : 0;
-    const chrome = (head ? head.getBoundingClientRect().height : 0) + pinned + 12;
+    // a header that scrolls away (a phone) takes no room at the top
+    const headH = head && getComputedStyle(head).position === 'sticky' ? head.getBoundingClientRect().height : 0;
+    const chrome = headH + pinned + 12;
     if (!always && r.top >= chrome && r.bottom <= window.innerHeight) return;
     try {
       window.scrollTo({ top: window.scrollY + r.top - chrome,
@@ -1022,10 +1052,16 @@
   }
   function placeStage() {
     const st = stageEl(), body = document.querySelector('#steps .step.on > .step-b');
+    /* On a phone, the steps whose drawing is only the empty racket skip it:
+       it took half the screen and showed nothing to do. */
+    const cur = steps[state.step];
+    st.hidden = !!(narrow() && cur && (cur.id === 'tools' || cur.id === 'measure'));
     if (narrow() && body) {
       body.insertBefore(st, body.firstChild);
       const head = document.querySelector('.top');
-      document.documentElement.style.setProperty('--hdr', (head ? head.getBoundingClientRect().height : 104) + 'px');
+      // the header scrolls away on a phone, so the drawing pins to the very top
+      const pinned = head && getComputedStyle(head).position === 'sticky';
+      document.documentElement.style.setProperty('--hdr', (pinned ? head.getBoundingClientRect().height : 0) + 'px');
     } else stageHome();
   }
   try { window.matchMedia('(max-width: 900px)').addEventListener('change', placeStage); } catch (e) { /* old browsers */ }
@@ -1144,7 +1180,7 @@
         if (to === 'starthole') { Holes.open('start'); return; }
         if (to === 'weavequiz') { WeaveQuiz.open(); return; }
         // leaving the guide for a lesson: offer the way back to the same step
-        if (state.tab === 'do' && (to === 'tension' || to === 'knot' || to === 'words')) showBack(true);
+        if (state.tab !== 'learn' && (to === 'tension' || to === 'knot' || to === 'words')) showBack(true);
         if (to === 'words') { showTab('learn'); showSub('words'); return; }
         if (to === 'tension') { showTab('learn'); showSub('tension'); return; }
         if (to === 'knot') {

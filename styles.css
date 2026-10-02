@@ -614,6 +614,11 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .quiz-cta:has(+ .jump .knot-btn){display:inline-flex;margin:6px 8px 4px 0;vertical-align:top}
 .quiz-cta + .jump:has(.knot-btn){display:inline-flex;margin:6px 0 14px;vertical-align:top}
 .quiz-ico,.why-q{display:inline-grid;place-items:center;min-width:15px;font:700 15px/1 var(--font);color:inherit}
+.modal-card.ks-card{max-width:420px;margin:auto;position:absolute;left:12px;right:12px;bottom:16px;width:auto;padding:18px 18px 16px}
+.ks-kind{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 4px;font-weight:600}
+.ks-h{font-size:17px;margin:0 36px 8px 0}
+.ks-note{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0 0 14px}
+.ks-go{width:100%;min-height:46px}
 .primer{position:relative;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
   border-radius:8px;padding:12px 14px;margin:0 0 16px;font-size:13px;line-height:1.55}
 .primer p{margin:0 0 6px;color:var(--ink-2);padding-right:64px}
@@ -1131,7 +1136,15 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .spec-i:nth-last-child(-n+2){border-bottom:0}
   .spec-i b{font-size:14px;overflow-wrap:anywhere}
   .top-actions{margin-left:auto}
-  .top-actions .btn{min-height:36px;padding:0 12px;font-size:12.5px}
+  .top-actions .btn{min-height:32px;padding:0 10px;font-size:12px}
+  /* one slim header that scrolls away, so the step being read gets the screen */
+  .top{position:static;padding:6px 0 0;gap:4px 8px}
+  .brand-name{font-size:13px}
+  .tab{min-height:38px;padding:0 9px;font-size:13px}
+  /* the open step has its own number badge; the blue edge down the whole
+     screen fought the header, so a phone does without it */
+  .step.on{box-shadow:none;margin:0;padding:0;border-radius:0;background:none}
+  .step.on>.step-h{padding-top:12px}
   .subtabs{flex-wrap:wrap}
   .player-meta{flex-wrap:wrap}
   .knot-zoom{position:static;justify-content:flex-end;background:none;border:0;padding:6px}
@@ -1140,6 +1153,136 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .throat-cta .btn.primary,.btn.th-why-btn,.btn.quiz-btn,.btn.knot-btn,.btn.play-btn{min-height:44px}
 }
 .modal-card:focus{outline:none}
+
+/* ======================= phone and tablet polish ======================= */
+/* Everything below is narrow-screen only: a desktop never matches it. */
+@media(max-width:900px){
+  /* a link and the comma or full stop after it wrap together */
+  .nobr{white-space:nowrap}
+  /* an empty notice drew a stray rule above the footer */
+  .fineprint:empty{display:none}
+}
+
+@media(max-width:640px){
+  /* 16px gutters, and type a phone can read at arm's length on the bench */
+  .app{padding:0 16px}
+  body{font-size:15px}
+  .screen-h p{font-size:14px}
+  .step.on>.step-b{font-size:15px;line-height:1.65}
+  .step-t em{font-size:13px}
+  .lede,.lede-p{font-size:15px}
+  .knot-head .lede-p{font-size:14px}
+  .watch-for p,.step-tip,.machine-note,.done-banner,.knot-aside .warn{font-size:14px}
+  .help,.note,.hint,.ten-tip,details.why>*:not(summary){font-size:13.5px}
+  .cycle-card>b{font-size:14px}
+  .cycle-card>em,.cmp-col ul,.rc-t{font-size:13px}
+  .gl summary{font-size:15px}
+  .gl p,.two-axes p,.rules p,.ref-sec .rules p{font-size:14px}
+  .rules h4,.two-axes h4{font-size:14px}
+  .mg-how{font-size:14px}
+  .mg-clamp,.mg-ref,.mg-phys,.mg-who,.mg-pc ul,.mg-mini p,.mg-tips,.mg-spec dd{font-size:13.5px}
+  .knot-caption,.sk-cap{font-size:15px}
+  .knot-legend{font-size:13px}
+  .ho-text{font-size:15px}
+  .ho-note{font-size:13px}
+  .th-why p{font-size:15px}
+  .why-pair figcaption{font-size:14px}
+  .wq-h{font-size:17px}
+  .wq-why,.ks-note{font-size:15px}
+  .wz-choice b,.start-opt b{font-size:15px}
+  .wz-choice span,.start-opt span,.wz-facts dt,.wz-facts dd,.start-resume p{font-size:13.5px}
+  .deck-t b{font-size:14px}
+  .deck-t em{font-size:12.5px}
+  .spec-strip b{font-size:14px}
+  .spec-i b,.spec-strip b,.facts dd{text-wrap:balance}
+  .facts dd em,.foot,.tilt-cap,.tilt-ctl span,.tilt-hint,.knot-hint,.tool-msg{font-size:12px}
+  #progText,#stringLabel,.art-hint,.linkish,.knot-count{font-size:13px}
+  /* the small capitals labels and number badges: nothing under 12px */
+  .fieldset h2,.step-sh,.spec-strip em,.watch-for h4,.facts dt,.spec-i em,.plane-h,.ref-h,.mc-k,
+  .gl-group h3,.th-result,.wq-count,.wz-count,.ks-kind,.do-cap-n,.mg-spec dt,.tag,
+  .rail-n,.step-n,.deck-n,.tab b,.fieldset h2 i,.knot-step span,.sk-dot{font-size:12px}
+
+  /* tap targets */
+  .tab{min-height:44px}
+  .top-actions .btn{min-height:40px}
+  .rail-b{min-height:44px;justify-content:center}
+  .deck-tab{min-height:44px;align-items:center}
+  .deck-n{transform:none}
+  .primer p{padding-right:76px}
+  .primer-links{gap:0 18px}
+  .primer-links .linkbtn{display:inline-flex;align-items:center;min-height:40px;font-size:14px}
+  .btn.tiny.primer-x{min-height:40px;padding:0 12px;font-size:13px}
+  details.why>summary{min-height:44px;font-size:14px}
+  .linkish{min-height:44px;display:inline-flex;align-items:center}
+  #stringScrub{height:32px}
+  .modal-x{width:44px;height:44px;right:8px;top:8px;font-size:20px}
+  .subtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+  .subtab{min-height:44px;font-size:14px;padding:0 8px;white-space:normal}
+
+  /* String it: the numbers above each step sit in a tidy two-column grid
+     instead of a row that wraps one orphan underneath */
+  .spec-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin-bottom:18px}
+  .step-sh{margin:22px 0 10px}
+  /* the open step has no panel of its own on a phone, so neither does its drawing */
+  .step-b > .stage{background:var(--bg);box-shadow:0 0 0 4px var(--bg)}
+  /* mains and crosses: the drawing and its player share the screen with the
+     first lines of the step instead of filling it */
+  .step-b > .stage[data-view=mains] #doArt .racket-svg,
+  .step-b > .stage[data-view=crosses] #doArt .racket-svg{max-height:min(42vh,420px)}
+  .step-b > .stage[data-view=mains] .stage-art,
+  .step-b > .stage[data-view=crosses] .stage-art{padding:4px}
+  .step-b > .stage .art-hint{padding:0 12px 10px}
+  .player{padding:8px 10px}
+
+  /* Knot lessons: the diagram stays pinned at the top while its words scroll
+     under it, so the picture and the move it shows are always on screen together */
+  #kpanel-finish .knot-stage{position:sticky;top:0;z-index:4;display:grid;
+    grid-template-columns:minmax(0,1fr) auto;align-items:center;box-shadow:0 10px 18px -12px rgba(0,0,0,.9)}
+  .knot-svg{grid-column:1/-1;max-height:40vh}
+  .knot-hint{grid-column:1;grid-row:2;padding:0 10px}
+  .knot-zoom{grid-column:2;grid-row:2;padding:4px 6px 6px;gap:6px}
+  .knot-zoom button{width:40px;height:40px;font-size:16px;border-radius:7px}
+  .knot-zoom button[data-z="0"]{font-size:13px;padding:0 12px}
+  .knot-legend{margin-top:14px;gap:8px 16px}
+  .knot-svg text[font-size="6.5"]{font-size:7.5px}
+  .sk-stage.on .sk-svg{position:sticky;top:0;z-index:4;max-height:46vh;
+    box-shadow:0 10px 18px -12px rgba(0,0,0,.9)}
+  .knot-nav,.sk-nav{margin-top:16px}
+
+  /* Pop-ups with a diagram open as a full-screen sheet: the drawing gets the
+     whole width, and nothing behind it shows around the edges */
+  #throatModal .modal-card,.modal-card.wq-card,.modal-card.ho-card{
+    width:100%;max-width:none;margin:0;min-height:100dvh;max-height:100dvh;
+    border:0;border-radius:0;padding:16px 16px 28px}
+  .th-head p{font-size:14px;line-height:1.55}
+  .th-verdict em{font-size:13.5px}
+  .th-rules>div{font-size:13px}
+  .wq-h,.ho-h{margin-right:48px}
+  .wq-choices{margin:16px 0 10px}
+  .why-pair figure{padding:10px 8px}
+
+  /* SVG labels a phone shrinks below reading size */
+  .wq-svg .wq-n{font-size:14px}
+  .wq-svg .wq-l{font-size:15px}
+  .why-svg .why-n{font-size:13.5px}
+  .why-svg .why-l{font-size:13px}
+  .ho-svg .ho-n{font-size:15px}
+  .ho-svg .ho-t{font-size:13px}
+  .clamp-svg .cl-s{font-size:15px}
+  .clamp-svg .cl-h{font-size:19px}
+  .mc-svg .mc-l{font-size:12px}
+  .sk-svg text[font-size="8.5"]{font-size:9.5px}
+
+  /* the last few small labels and sub-44px targets */
+  .field>span,.fld>span{font-size:13px}
+  .knot-tab em{font-size:13px}
+  .knot-tab b{font-size:14px}
+  .mg-price,.rc-n{font-size:12.5px}
+  .cycle-card>span{font-size:12px}
+  .btn.tiny{font-size:13px}
+  .seg button,.stage-tools .btn.tiny{min-height:44px}
+  .top-actions .btn,.btn.tiny.primer-x,.primer-links .linkbtn{min-height:44px}
+}
 
 /* ============================ focus & motion ============================ */
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -1156,3 +1299,56 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .knot circle{animation:none}
   .tilt-stage{transition:none}
 }
+
+/* phone finishing touches: a pinned diagram masks what scrolls under it,
+   and the player's replay is an icon so the player stays one row */
+@media(max-width:640px){
+  #kpanel-finish .knot-stage,.sk-stage.on .sk-svg{box-shadow:0 12px 0 var(--bg),0 -2px 0 var(--bg)}
+  #btnReplayStep{font-size:0;min-width:44px;min-height:44px;display:inline-grid;place-items:center;margin-left:auto}
+  #btnReplayStep::before{content:'\21BB';font-size:22px;line-height:1;color:var(--accent)}
+  .player-meta{flex-wrap:nowrap;align-items:center;min-width:0}
+  .player-scrub{min-width:0}
+  #stringLabel{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto}
+  #btnReplayStep{flex:none}
+  .player{gap:8px}
+  .player-btns .pl-btn{width:40px;min-height:40px}
+  .player-btns .pl-play{width:46px;min-height:46px}
+  .knot-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .knot-tab{min-width:0}
+}
+
+/* Mains and crosses on a phone: the drawing and its player stay pinned at
+   the top, short and compact, so the instructions scroll underneath with
+   the drawing always in view, the way the knot lessons work. */
+@media(max-width:900px){
+  .step-b > .stage[data-view=mains],.step-b > .stage[data-view=crosses]{
+    position:sticky;top:0;z-index:6;background:var(--bg);padding-bottom:8px;margin-bottom:10px;
+    box-shadow:0 10px 14px -10px rgba(0,0,0,.9)}
+  .step-b > .stage[data-view=mains] #doArt .racket-svg,
+  .step-b > .stage[data-view=crosses] #doArt .racket-svg{max-height:26vh}
+  .step-b > .stage[data-view=mains] .art-hint,
+  .step-b > .stage[data-view=crosses] .art-hint{font-size:12px;padding:0 10px 6px}
+  .step-b > .stage[data-view=mains] .player,
+  .step-b > .stage[data-view=crosses] .player{padding:6px 10px;margin-top:6px}
+  .step-b > .stage[data-view=mains] .player-btns .pl-btn,
+  .step-b > .stage[data-view=crosses] .player-btns .pl-btn{width:38px;min-height:38px}
+  .step-b > .stage[data-view=mains] .player-btns .pl-play,
+  .step-b > .stage[data-view=crosses] .player-btns .pl-play{width:42px;min-height:42px}
+  .step-b > .stage[data-view=mains] .player-meta,
+  .step-b > .stage[data-view=crosses] .player-meta{gap:6px}
+}
+
+/* the player on a phone: one tight row, a slider with its label right under it */
+@media(max-width:640px){
+  #tab-do .player{padding:6px 10px 6px 8px;gap:8px;align-items:center}
+  #tab-do .player-btns{gap:4px}
+  #tab-do .player-btns .pl-btn{width:34px;min-height:34px;font-size:16px}
+  #tab-do .player-btns .pl-play{width:40px;min-height:40px}
+  #tab-do .player-scrub{gap:0}
+  #tab-do #stringScrub{height:18px}
+  #tab-do .player-meta{gap:4px;margin-top:-2px}
+  #tab-do #stringLabel{font-size:12px;color:var(--ink-2)}
+  #tab-do #btnReplayStep{min-width:36px;min-height:28px}
+  #tab-do #btnReplayStep::before{font-size:18px}
+}
+
