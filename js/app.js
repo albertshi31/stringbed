@@ -961,9 +961,12 @@
     el('startCard').classList.add('on');
     el('startChoose').hidden = true;
     el('wizard').hidden = false;
-    Wizard.open(el('wizard'), state, applyWizard, () => showStart(false));
+    startOpener = startOpener || document.activeElement;
+    Wizard.open(el('wizard'), state, applyWizard, hideStart);
   }
   function applyWizard(d) {
+    /* The guide only asks before throwing away work: a job with ticked checks. */
+    if (Job.hasChecks(state) && !confirm('Start a new job? Your ticked checks will be cleared.')) return;
     state.purpose = Job.purpose(d.purpose).id;
     state.racketId = d.racketId;
     state.machineType = d.machineType;
@@ -1154,7 +1157,8 @@
       if (x) (x.dataset.export === 'svg' ? saveSvg : savePng)();
     });
 
-    el('btnSetup').addEventListener('click', () => showStart(true));
+    // the setup guide opens straight away; there is no menu in front of it
+    el('btnSetup').addEventListener('click', () => { startOpener = document.activeElement; openWizard(); });
 
     /* ---- 1 · racket ---- */
     el('brandSeg').addEventListener('click', e => {
@@ -1429,5 +1433,6 @@
   mountKnots();
   showSub(state.sub);
   showTab(state.tab);
-  if (!state.seenStart) showStart(Job.hasProgress(state));
+  /* No pop-up on arrival: the numbered tabs show where to start, and the
+     setup guide is one click away in the header. */
 })();
