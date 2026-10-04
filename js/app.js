@@ -164,10 +164,32 @@
       highlightYoke: opts && opts.highlightYoke, markThroatPairs: opts && opts.markThroatPairs,
       stepIndex: opts && opts.stepIndex, tension: opts && opts.tension,
       mountRig: opts && opts.mountRig, hideLabel: opts && opts.hideLabel,
+      minFont: opts && opts.minFont, hitR: opts && opts.hitR, tied: opts && opts.tied,
       crossFromTop: pl.crossFromTop, crossStartSide: pl.crossStartSide, mainsStart: pl.mainsStart,
       knots: (opts && opts.noKnots) ? [] : knotMarks(c, stage)
     };
   }
+
+  /* Draw a racket into host, then measure how big it really is on screen.
+     If its smallest label would read under 12 px there (a phone, or the
+     pinned drawing), draw it once more with the type sized for that scale,
+     and on a touch screen give each knot marker a fingertip-sized target.
+     make(fit) returns the SVG; fit is {} the first time. Nothing to measure
+     (a hidden tab, or a test in jsdom) means the first drawing stands. */
+  function paintArt(host, make) {
+    host.innerHTML = make({});
+    const svg = host.querySelector('svg');
+    const vb = svg && svg.viewBox && svg.viewBox.baseVal;
+    const r = svg && svg.getBoundingClientRect();
+    if (!vb || !vb.width || !r || !r.width || !r.height) return host.innerHTML;
+    const s = Math.min(r.width / vb.width, r.height / vb.height);
+    const fit = { minFont: 12.2 / s, hitR: touchOnly() ? 21 / s : 0 };
+    if (fit.minFont <= 8 && !fit.hitR) return host.innerHTML;
+    host.innerHTML = make(fit);
+    return host.innerHTML;
+  }
+  /* knot markers on a small drawing grow a little with the type, up to 1.6x */
+  const markFor = (fit, base) => base * Math.min(1.6, Math.max(1, (fit.minFont || 0) / 12));
 
   /* Where the knots land, so they can be marked on the frame. */
   function knotMarks(c, stage) {
@@ -290,7 +312,8 @@
 
     const pl = planFor(c);
 
-    el('racketArt').innerHTML = RacketSVG.render(svgOpts(c, 'empty', false, 'head', { noKnots: true }));
+    paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
+      Object.assign({ noKnots: true }, fit))));
     facts('racketFacts', [
       ['Tension range', `${c.r.tension[0]} to ${c.r.tension[1]} lb`, `As ${c.r.brand} marks it on the frame`]
     ]);
@@ -382,7 +405,8 @@
       + Job.machine(state.machineType).clamp;
     renderDeck(c);
 
-    el('stringArt').innerHTML = RacketSVG.render(svgOpts(c, 'done', animate, 'head'));
+    paintArt(el('stringArt'), fit => RacketSVG.render(svgOpts(c, 'done', animate, 'head',
+      Object.assign({}, fit, { markScale: markFor(fit, 1) }))));
     /* The markers are the only thing on the page that can be touched without
        looking like a control, so the page has to say so. */
     el('stringHint').innerHTML = `<span><b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
@@ -484,6 +508,12 @@
     }).join('');
 
     el('primer').hidden = !!state.primerDone;
+    // past the first step the reminder shrinks to one slim line
+    el('primer').classList.toggle('slim', state.step > 0);
+    // the walk-through cards are tapped on a phone, not clicked
+    if (touchOnly()) all('#steps .beat-hint').forEach(p => p.childNodes.forEach(n => {
+      if (n.nodeType === 3 && /click a card/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace('click a card', 'tap a card');
+    }));
     syncProgress();
     placeStage();
     el('jobNotice').textContent = Job.purpose(state.purpose).notice || '';
@@ -514,53 +544,50 @@
   function renderStage(c) {
     const st = steps[state.step];
     if (!st) return;
-    let view;
-
-    if (st.id === 'throat') {
-      view = RacketSVG.render(svgOpts(c, 'empty', false, 'head',
-        { highlightYoke: true, markThroatPairs: c.throatPairs, noKnots: true }));
-    } else if (st.id === 'mount') {
-      view = RacketSVG.render(svgOpts(c, 'empty', false, 'head', { mountRig: true, noKnots: true }));
-    } else if (st.id === 'start') {
-      /* On a phone this drawing is pinned small (24vh, see styles.css), so
-         its chip labels are scaled up to stay at ~10 px or more on screen.
-         470 is about the beat view's viewBox height. */
-      const px = narrow() ? 0.24 * (window.innerHeight || 800) / 470 : 1;
-      view = RacketSVG.render(svgOpts(c, 'start', false, 'head',
-        { startBeat: state.startBeat || 1, labelScale: px < 1 ? 10.5 / (10 * px) : 1 }));
-    } else if (st.id === 'mains') {
-      const n = c.bed.mains.length, k = state.stringStep, tie = k === n - 1;
-      view = RacketSVG.render(svgOpts(c, 'mains', !k, 'head',
-        k ? { stepIndex: tie ? n : k + 2, markScale: 1.4, noKnots: !tie, tension: state.tMain }
-          : { pace: 0.62, clampDemo: true, markScale: 1.4 }));
-    } else if (st.id === 'crosses') {
-      const n = c.bed.crosses.length, k = state.stringStep, tie = k === n + 1;
-      view = RacketSVG.render(svgOpts(c, 'crosses', !k, 'head',
-        k ? { stepIndex: tie ? n : k, markScale: 1.4, noKnots: !tie, tension: state.tCross }
-          : { pace: 0.58, clampDemo: true, markScale: 1.4 }));
-    } else if (st.id === 'measure' || st.id === 'tools') {
-      view = RacketSVG.render(svgOpts(c, 'empty', false, 'head', { noKnots: true }));
-    } else {
-      view = RacketSVG.render(svgOpts(c, 'done', false, 'head', { markScale: 1.4 }));
-    }
-    el('doArt').innerHTML = view;
+    const viewFor = fit => {
+      const R = (stage, anim, extra) =>
+        RacketSVG.render(svgOpts(c, stage, anim, 'head', Object.assign({}, fit, extra)));
+      if (st.id === 'throat')
+        return R('empty', false, { highlightYoke: true, markThroatPairs: c.throatPairs, noKnots: true });
+      if (st.id === 'mount') return R('empty', false, { mountRig: true, noKnots: true });
+      if (st.id === 'start') return R('start', false, { startBeat: state.startBeat || 1 });
+      if (st.id === 'mains' || st.id === 'crosses') {
+        const mains = st.id === 'mains';
+        const n = mains ? c.bed.mains.length : c.bed.crosses.length, k = state.stringStep;
+        const tie = mains ? k === n - 1 : k === n + 1;
+        const ms = markFor(fit, 1.4);
+        return R(st.id, !k, k
+          ? { stepIndex: tie ? n : (mains ? k + 2 : k), markScale: ms, noKnots: !tie, tied: tie,
+              tension: mains ? state.tMain : state.tCross }
+          : { pace: mains ? 0.62 : 0.58, clampDemo: true, markScale: ms });
+      }
+      if (st.id === 'measure' || st.id === 'tools') return R('empty', false, { noKnots: true });
+      return R('done', false, { markScale: markFor(fit, 1.4) });
+    };
     // which drawing is up, so the stylesheet can size each one for a phone
     const stageBox = stageEl();
     if (stageBox) stageBox.dataset.view = st.id;
+    const view = paintArt(el('doArt'), viewFor);
     // the knot markers are easy to miss, so say they can be opened
     const hasKnots = /class="knot"/.test(view);
     /* the string-by-string frames number their three actions on the racket
        (racketSvg.js stepped view): 1 pull it through / weave it, 2 tension
        it, 3 clamp it. Say so, or the numbers read as an order of strings. */
     const hasBadges = /class="hint-dot"/.test(view);
+    const chip = n => `<b class="chip">${n}</b>`;
     const key = !hasBadges ? '' : st.id === 'crosses'
-      ? '<b>1</b> weave it through · <b>2</b> tension it · <b>3</b> clamp it'
-      : '<b>1</b> pull it through · <b>2</b> tension it · <b>3</b> clamp it';
+      ? `${chip(1)} weave it through · ${chip(2)} tension it · ${chip(3)} clamp it`
+      : `${chip(1)} pull it through · ${chip(2)} tension it · ${chip(3)} clamp it`;
     const knotLine = !hasKnots ? '' : touchOnly()
       ? 'Tap a marker to see which knot goes there.'
       : 'Hover over a marker to see which knot goes there. Click it to learn the knot.';
+    /* An animated run draws its knots last, so the line about them waits
+       until they are there to tap; until then it would point at nothing. */
+    const late = /class="knots" style="--d:([\d.]+)s;opacity:0"/.exec(view);
+    const knotSpan = late
+      ? `<span class="hint-late" style="animation-delay:${late[1]}s">${knotLine}</span>` : `<span>${knotLine}</span>`;
     el('doHint').hidden = !(key || knotLine);
-    el('doHint').innerHTML = [key, knotLine].filter(Boolean).map(t => '<span>' + t + '</span>').join('<br>');
+    el('doHint').innerHTML = [key && '<span>' + key + '</span>', knotLine && knotSpan].filter(Boolean).join('<br>');
     // the walk-through card for the moment on screen is the selected one
     all('#steps .cycle-card[data-beat]').forEach(b => {
       const on = st.id === 'start' && +b.dataset.beat === (state.startBeat || 1);
@@ -691,11 +718,33 @@
     el('glossary').innerHTML = GLOSS_GROUPS.map(([title, keys]) =>
       `<section class="gl-group"><h3>${title}</h3>${keys.filter(def).map(k => term(k, def(k))).join('')}</section>`
     ).join('');
+    /* one switch above the groups opens or closes every term at once */
+    let tog = el('glossToggle');
+    if (!tog) {
+      tog = document.createElement('button');
+      tog.type = 'button'; tog.id = 'glossToggle'; tog.className = 'btn tiny ghost gloss-toggle';
+      el('glossary').parentNode.insertBefore(tog, el('glossary'));
+      tog.addEventListener('click', () => {
+        const open = !all('#glossary details.gl').every(d => d.open);
+        all('#glossary details.gl').forEach(d => { d.open = open; });
+        syncGlossToggle();
+      });
+      el('glossary').addEventListener('toggle', syncGlossToggle, true);
+    }
+    syncGlossToggle();
     /* one row per machine, from the same data the Machines tab reads, so the
        two tabs cannot disagree about when to clamp */
     el('ttMachines').innerHTML = Job.MACHINES.map(m =>
       `<li class="mc"><div class="mc-art" aria-hidden="true">${CLAMP_ART[m.id] || ''}</div>
         <div class="mc-t"><span class="mc-k">${m.name}</span><b>${m.clamp}</b></div></li>`).join('');
+  }
+
+  function syncGlossToggle() {
+    const tog = el('glossToggle');
+    if (!tog) return;
+    const allOpen = all('#glossary details.gl').every(d => d.open);
+    tog.textContent = allOpen ? 'Collapse all' : 'Expand all';
+    tog.setAttribute('aria-expanded', allOpen ? 'true' : 'false');
   }
 
   let knotLesson = 'finish';
@@ -764,7 +813,7 @@
     b.textContent = backTab === 'do' ? `\u2190 Back to step ${state.step + 1}`
       : `\u2190 Back to ${{ racket: 'Racket', string: 'String' }[backTab] || 'where you were'}`;
   }
-  function showTab(name) {
+  function showTab(name, keepScroll) {
     if (['racket', 'string', 'do', 'learn'].indexOf(name) < 0) name = 'racket';
     if (name !== 'learn') el('backToStep').hidden = true;
     state.tab = name;
@@ -778,7 +827,30 @@
     });
     all('.screen').forEach(p => p.classList.toggle('on', p.id === 'tab-' + name));
     render(name === 'string');
+    if (keepScroll) return;
+    /* String it opens on the open step, its header at the top under the
+       pinned chrome. The one exception is a first visit, still on step 1 with
+       the first-time card showing: that card is meant to be read first. */
+    if (name === 'do' && !(state.step === 0 && !state.primerDone)) { revealStep(true, true); return; }
     try { window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }); } catch (e) { /* no viewport */ }
+  }
+
+  /* A link into Learn lands on the part it names, not the top of the tab. */
+  function revealIn(target) {
+    const t = typeof target === 'string' ? el(target) : target;
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    if (!r.height) return;
+    const head = document.querySelector('.top');
+    const headH = head && getComputedStyle(head).position === 'sticky' ? head.getBoundingClientRect().height : 0;
+    try {
+      window.scrollTo({ top: Math.max(0, window.scrollY + r.top - headH - 12), behavior: 'auto' });
+    } catch (e) { /* no viewport */ }
+  }
+  function openLearn(sub, target) {
+    showTab('learn', true); showSub(sub);
+    if (sub === 'knots') selectKnot(knotLesson);
+    revealIn(target || 'sub-' + sub);
   }
 
   function showSub(name) {
@@ -791,6 +863,13 @@
       t.tabIndex = on ? 0 : -1;
     });
     all('#tab-learn .sub').forEach(p => { p.hidden = p.id !== 'sub-' + name; });
+    // on a phone the sub-tabs are one sideways-scrolling row: keep this one in it
+    const on = document.querySelector('.subtab.on'), row = el('subtabs');
+    if (on && row && row.scrollWidth > row.clientWidth) {
+      const x = on.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
+      try { row.scrollTo({ left: x - (row.clientWidth - on.offsetWidth) / 2, behavior: 'auto' }); }
+      catch (e) { /* old browsers */ }
+    }
     save();
   }
 
@@ -929,7 +1008,9 @@
       return best;
     };
     document.addEventListener('click', e => {
-      const g = pick(e) || near(e);
+      /* on a touch screen the targets are fingertip-sized and can overlap, so
+         the marker whose centre is nearest the tap wins, not the one on top */
+      const g = touchOnly() && near(e) || pick(e) || near(e);
       if (!g) { if (on) { on = null; tip.classList.remove('on'); } return; }
       /* On a phone a hover tooltip is no use and the markers are small, so a
          tap opens a card that names the knot, with a button to its lesson. */
@@ -942,9 +1023,9 @@
         /* The marker says which knot it is. Every tie-off is the finishing
            knot; only the one that starts a two-piece cross bunch is the other
            lesson, and landing on the wrong one is worse than not linking. */
-        selectKnot(g.dataset.lesson === 'start' ? 'start' : 'finish');
+        knotLesson = g.dataset.lesson === 'start' ? 'start' : 'finish';
         showBack(true);
-        showTab('learn'); showSub('knots');
+        openLearn('knots', 'kpanel-' + knotLesson);
         return;
       }
       const r = g.getBoundingClientRect(); on = g; show(g, r.left + r.width / 2, r.top);
@@ -1020,7 +1101,7 @@
    * fit on screen, and then by the least it can.
    *
    * No layout (a test in jsdom) means nothing to measure and nothing to do. */
-  function revealStep(always) {
+  function revealStep(always, instant) {
     const li = document.querySelector('#steps .step.on');
     if (!li) return;
     const r = li.getBoundingClientRect();
@@ -1036,8 +1117,8 @@
     const chrome = headH + pinned + 12;
     if (!always && r.top >= chrome && r.bottom <= window.innerHeight) return;
     try {
-      window.scrollTo({ top: window.scrollY + r.top - chrome,
-                        behavior: reduceMotion() ? 'auto' : 'smooth' });
+      window.scrollTo({ top: Math.max(0, window.scrollY + r.top - chrome),
+                        behavior: instant || reduceMotion() ? 'auto' : 'smooth' });
     } catch (e) { /* no viewport */ }
   }
 
@@ -1072,8 +1153,35 @@
     const open = firstOpenStep();
     if (open < 0) { render(false); confetti(); return; }
     el('finishMsg').dataset.on = '1';
-    navAt = 0; goStep(open);
-    syncFinishMsg();
+    if (open !== state.step || !state.stepOpen) {
+      state.step = open; state.stepOpen = true; state.startBeat = 1; state.stringStep = 0;
+      stopBeats(); clearTimeout(stringTimer); stringTimer = null;
+      render(false);
+    } else syncFinishMsg();
+    /* Say it where the eye is: the reminder sits in the open step, right
+       above its checks, and the boxes still to tick flash an outline. */
+    const li = document.querySelector('#steps .step.on');
+    if (!li) return;
+    li.querySelectorAll('.check').forEach(lab => {
+      const box = lab.querySelector('input[data-ck]');
+      lab.classList.remove('nudge');
+      if (box && !box.checked) { void lab.offsetWidth; lab.classList.add('nudge'); }
+    });
+    const checks = li.querySelector('.step-checks');
+    const r = checks && checks.getBoundingClientRect();
+    if (!r || !r.height) return;
+    const head = document.querySelector('.top');
+    const headH = head && getComputedStyle(head).position === 'sticky' ? head.getBoundingClientRect().height : 0;
+    const rail = document.querySelector('#tab-do .prog');
+    const railH = rail && getComputedStyle(rail).position === 'sticky' ? rail.getBoundingClientRect().height : 0;
+    const pin = li.querySelector('.step-b > .stage');
+    const pinH = pin && !pin.hidden && getComputedStyle(pin).position === 'sticky' ? pin.getBoundingClientRect().height : 0;
+    const top = headH + railH + pinH + 16;
+    // the checks and the buttons under them, as much as fits under the chrome
+    const want = r.top - top - Math.max(0, (window.innerHeight - top - r.height - 90) / 2);
+    try {
+      window.scrollTo({ top: Math.max(0, window.scrollY + want), behavior: reduceMotion() ? 'auto' : 'smooth' });
+    } catch (e) { /* no viewport */ }
   }
 
   /* A little celebration for a finished racket: confetti falling down the
@@ -1115,8 +1223,19 @@
   function syncFinishMsg() {
     const msg = el('finishMsg');
     const open = msg.dataset.on ? firstOpenStep() : -1;
+    all('#steps .step-warn').forEach(x => x.remove());
+    msg.classList.remove('moved');
     if (open < 0) { msg.textContent = ''; delete msg.dataset.on; return; }
     msg.textContent = `Step ${open + 1} still has checks to tick.`;
+    /* When that step is the open one, the same words go inside it, above its
+       checks, and the line at the foot of the list stands down. */
+    const box = document.querySelector(`#steps .step.on[data-i="${open}"] .step-checks`);
+    if (!box) return;
+    const p = document.createElement('p');
+    p.className = 'step-warn';
+    p.textContent = msg.textContent;
+    box.insertBefore(p, box.querySelector('.check'));
+    msg.classList.add('moved');
   }
 
   let navAt = 0;
@@ -1136,7 +1255,7 @@
       state.primerDone = true; el('primer').hidden = true; save();
     });
     el('backToStep').addEventListener('click', () => {
-      showTab(backTab); if (backTab === 'do') revealStep(true);
+      showTab(backTab);
     });
     el('tabs').addEventListener('click', e => {
       const b = e.target.closest('.tab'); if (!b) return;
@@ -1181,11 +1300,11 @@
         if (to === 'weavequiz') { WeaveQuiz.open(); return; }
         // leaving the guide for a lesson: offer the way back to the same step
         if (state.tab !== 'learn' && (to === 'tension' || to === 'knot' || to === 'words')) showBack(true);
-        if (to === 'words') { showTab('learn'); showSub('words'); return; }
-        if (to === 'tension') { showTab('learn'); showSub('tension'); return; }
+        if (to === 'words') { openLearn('words', 'tab-learn'); return; }
+        if (to === 'tension') { openLearn('tension'); return; }
         if (to === 'knot') {
           if (g.dataset.knot) knotLesson = g.dataset.knot;
-          showTab('learn'); showSub('knots'); selectKnot(knotLesson); return;
+          openLearn('knots', 'kpanel-' + (knotLesson === 'start' ? 'start' : 'finish')); return;
         }
         showTab(to); return;
       }
@@ -1428,17 +1547,37 @@
       yokeSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'yoke'),
         { highlightYoke: true, markThroatPairs: cache.throatPairs, knots: [] }))
     });
+    /* the close-up's labels are sized for the screen it opened on, as the
+       bench drawings are; it is a picture only, so it stays out of the tab order */
+    const yoke = document.querySelector('#throatModal .th-yoke');
+    if (yoke) paintArt(yoke, fit => RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'yoke'),
+      { highlightYoke: true, markThroatPairs: cache.throatPairs, knots: [], minFont: fit.minFont }))
+      .replace(/tabindex="0"/g, 'tabindex="-1"')
+      .replace(/<svg /g, '<svg aria-hidden="true" focusable="false" '));
   }
 
   /* step through the six start beats on a timer */
   let beatTimer = null;
   function stopBeats() { clearTimeout(beatTimer); beatTimer = null; }
+  /* While it plays, the card for the moment on screen stays in view, just
+     under the drawing that is pinned above the cards on a phone. */
+  function keepCardInView() {
+    const card = document.querySelector('#steps .step.on .cycle-card.on');
+    const r = card && card.getBoundingClientRect();
+    if (!r || !r.height) return;
+    const pin = document.querySelector('#steps .step.on .step-b > .stage');
+    const top = (pin && getComputedStyle(pin).position === 'sticky'
+      ? Math.max(0, pin.getBoundingClientRect().bottom) : 0) + 8;
+    const dy = r.top < top ? r.top - top : r.bottom > window.innerHeight - 8 ? r.bottom - window.innerHeight + 8 : 0;
+    if (!dy) return;
+    try { window.scrollBy({ top: dy, behavior: reduceMotion() ? 'auto' : 'smooth' }); } catch (e) { /* no viewport */ }
+  }
   function playBeats() {
     stopBeats();
-    state.startBeat = 1; renderStage(cache);
+    state.startBeat = 1; renderStage(cache); keepCardInView();
     const tick = () => {
       if (state.startBeat >= 6) { beatTimer = null; return; }
-      state.startBeat += 1; renderStage(cache);
+      state.startBeat += 1; renderStage(cache); keepCardInView();
       beatTimer = setTimeout(tick, 1400);
     };
     beatTimer = setTimeout(tick, 1400);

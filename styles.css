@@ -570,7 +570,8 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .why-pair figure{margin:0;background:var(--well);border:1px solid var(--line);border-radius:8px;padding:10px}
 .why-pair figcaption{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:6px}
 .why-svg{display:block;width:100%;height:auto;max-height:340px}
-.why-svg .why-n{font:600 12.5px var(--mono);fill:#8f9aa7}
+.why-svg .why-n{font:600 12.5px var(--mono);fill:#8f9aa7;paint-order:stroke;stroke:#0c1014;stroke-width:4px;stroke-linejoin:round}
+.why-svg .why-n.on{fill:#4cc9e0}
 .why-svg .why-l{font:700 12px var(--font);paint-order:stroke;stroke:#0c1014;stroke-width:5px;stroke-linejoin:round}
 .throat-cta{margin:10px 0 14px}
 .step-b > .stage{margin:4px 0 14px;position:sticky;top:var(--hdr,104px);z-index:6;
@@ -597,6 +598,11 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .art-hint{position:absolute;left:12px;right:12px;bottom:10px;margin:0;text-align:center;pointer-events:none;
   font-size:12px;line-height:1.45;color:var(--ink-2)}
 .art-hint b{color:var(--ink)}
+/* the 1 2 3 key matches the neutral number chips on the drawing */
+.art-hint b.chip{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 3px;margin-right:2px;
+  border-radius:4px;background:#d3d9e1;color:#0b0e12;font:800 12px/1 var(--font);vertical-align:1px}
+/* the knot line on an animated run waits for its knots to appear */
+.art-hint span.hint-late{opacity:0;animation:pop .5s ease forwards}
 .art-hint span{display:inline-block;background:color-mix(in srgb,var(--well) 85%,transparent);border-radius:6px;padding:4px 10px}
 .beat-hint{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 /* One quiet style for every secondary call-out (count the throat, why count,
@@ -626,7 +632,14 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .primer-x{position:absolute;right:10px;top:10px}
 .inline-link{display:inline;padding:0;font:inherit;font-weight:600}
 .finish-msg{margin:10px 0 0;font-size:12.5px;color:var(--warn)}
-.finish-msg:empty{display:none}
+.finish-msg:empty,.finish-msg.moved{display:none}
+/* Finish with boxes still open: the reminder sits above them, and each box
+   still to tick gets a brief accent outline */
+.step-warn{margin:0 0 6px;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600;color:var(--warn);
+  background:color-mix(in srgb,var(--warn) 9%,transparent);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.check.nudge{border-radius:6px;animation:nudge 3.2s ease-out 1}
+@keyframes nudge{0%,55%{box-shadow:0 0 0 2px var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  100%{box-shadow:0 0 0 2px transparent;background:transparent}}
 .fineprint{font-size:11px;line-height:1.6;color:var(--muted);margin:18px 0 0;
   border-top:1px solid var(--line);padding-top:12px}
 .step-b .cta-row{display:flex;gap:8px}
@@ -708,7 +721,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .rank em{font-style:normal;color:var(--muted);font-weight:400}
 .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:4px}
 .rules>div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 12px}
-.rules h4{font-size:12.5px;color:var(--accent-2);margin-bottom:4px;line-height:1.35}
+.rules h4{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.35}
 .rules p{font-size:11.5px;line-height:1.55;color:var(--muted);margin:0}
 
 /* ---------------- knots ---------------- */
@@ -865,7 +878,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .mg-ref{font-size:12px;line-height:1.6;color:var(--muted);margin:0;padding-left:10px;
   border-left:1px solid var(--line-2)}
 .mg-phys{font-size:12px;line-height:1.6;color:var(--muted);margin:8px 0 0}
-.mg-compare{margin:0 0 18px;border-top:0;padding-top:0}
+.mg-compare{margin:0 0 26px;border-top:0;padding-top:0}
 .mg-note{font-size:13px;line-height:1.7;color:var(--ink-2);max-width:78ch;margin:0 0 16px}
 .mg-pc{display:grid;gap:6px}
 .mg-pc ul{margin:0;padding-left:17px;font-size:12px;line-height:1.55}
@@ -881,7 +894,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 }
 .mg-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 .mg-mini{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px}
-.mg-mini h4{font-size:13px;margin:7px 0 5px}
+.mg-mini h4{font-size:13.5px;font-weight:600;color:var(--ink);margin:7px 0 5px;line-height:1.35}
 .mg-mini p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}
 .tag{font:600 11px var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 .mg-tips{margin:0;padding-left:19px;font-size:12.5px;line-height:1.75;color:var(--muted);max-width:80ch}
@@ -903,7 +916,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:12px}
 .mc-art{flex:none;width:118px}
 .mc-svg{display:block;width:100%;height:auto}
-.mc-svg .mc-l{font:600 11px var(--font)}
+.mc-svg .mc-l{font:600 12.5px var(--font)}
 .mc-svg .mc-num{font:600 15px var(--mono)}
 .mc-t{display:flex;flex-direction:column;gap:4px;min-width:0}
 .mc-k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -913,7 +926,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .clamp-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .clamp-svg{display:block;width:100%;height:auto}
 .clamp-svg .cl-h{font:600 12px var(--font)}
-.clamp-svg .cl-s{font:500 11px var(--font);fill:var(--muted)}
+.clamp-svg .cl-s{font:500 12px var(--font);fill:var(--muted)}
 .clamp-fig figcaption{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:10px}
 @media(max-width:700px){.clamp-pair{grid-template-columns:1fr}}
 .rules-3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -1026,6 +1039,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 /* the sliders sit open on a wide screen; on a phone they fold behind this */
 .tilt-more>summary{display:none}
 .tilt-more{margin:0}
+.tilt-more>*+*{margin-top:10px}
 @media(max-width:860px){
   /* the answer first: the close-up and the result lead, the tilt view follows */
   .th-grid{display:flex;flex-direction:column;align-items:stretch;gap:12px}
@@ -1064,8 +1078,8 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .knot circle{animation:pulse 2.6s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.95}50%{opacity:.5}}
 .hint-dot{cursor:help}
-.hint-dot .hint-ring{transition:r .14s ease}
-.hint-dot:hover .hint-ring{r:12}
+.hint-dot .hint-ring{transition:fill .14s ease}
+.hint-dot:hover .hint-ring{fill:#fff}
 
 .racket-svg.animating .s-main,.racket-svg.animating .s-cross{
   stroke-dasharray:100;stroke-dashoffset:100;
@@ -1145,7 +1159,6 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
      screen fought the header, so a phone does without it */
   .step.on{box-shadow:none;margin:0;padding:0;border-radius:0;background:none}
   .step.on>.step-h{padding-top:12px}
-  .subtabs{flex-wrap:wrap}
   .player-meta{flex-wrap:wrap}
   .knot-zoom{position:static;justify-content:flex-end;background:none;border:0;padding:6px}
   .knot-hint{position:static;display:block;padding:0 8px 8px}
@@ -1216,8 +1229,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .linkish{min-height:44px;display:inline-flex;align-items:center}
   #stringScrub{height:32px}
   .modal-x{width:44px;height:44px;right:8px;top:8px;font-size:20px}
-  .subtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
-  .subtab{min-height:44px;font-size:14px;padding:0 8px;white-space:normal}
+  .subtab{min-height:44px;font-size:14px;padding:0 12px;flex:none}
 
   /* String it: the numbers above each step sit in a tidy two-column grid
      instead of a row that wraps one orphan underneath */
@@ -1297,6 +1309,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .racket-svg.animating .clamp,.racket-svg.animating .tail,
   .racket-svg.animating .route,.racket-svg.animating .grip{animation:none;opacity:1}
   .knot circle{animation:none}
+  .art-hint span.hint-late{animation:none;opacity:1}
   .tilt-stage{transition:none}
 }
 
@@ -1352,3 +1365,125 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   #tab-do #btnReplayStep::before{font-size:18px}
 }
 
+
+
+/* ===================== bench and pop-up fit, round 5 ===================== */
+/* Learn: the words page opens or closes every term at once */
+.gloss-toggle{display:block;margin:0 0 14px auto}
+
+@media(max-width:640px){
+  /* the job in one compact line: Pro Staff · Synthetic gut 1.30 mm · 55 lb · 11.5 m */
+  .spec{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;padding:8px 0 9px;overflow:visible}
+  .spec-i,.spec-i:nth-child(odd),.spec-i:first-child{display:inline;flex:none;padding:0;border:0;white-space:nowrap}
+  .spec-i em{display:none}
+  .spec-i b{font:500 13px/1.4 var(--font);color:var(--ink-2)}
+  .spec-i+.spec-i::before{content:"\00b7";margin:0 7px;color:var(--muted)}
+
+  /* Learn's sections: one row that scrolls sideways, one underline */
+  .subtabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:0;margin-left:-16px;margin-right:-16px;
+    padding:0 16px;scroll-padding:0 16px}
+
+  /* the pattern caption on the drawing: the strip above already says it */
+  .racket-svg .pat-label{display:none}
+
+  /* short pop-ups are a sheet from the bottom, as tall as what is in them */
+  .modal-card.wq-card,.modal-card.ho-card{position:absolute;left:0;right:0;bottom:0;top:auto;
+    width:100%;max-width:none;margin:0;min-height:0;max-height:calc(100dvh - 24px);
+    border:0;border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom))}
+  .ho-grid{gap:14px}
+  .ho-text p:last-child,.ho-text .ho-note{margin-bottom:0}
+
+  /* the throat pop-up fits one phone screen: tighter rhythm, smaller views */
+  #throatModal .modal-card{padding:14px 14px 18px}
+  .th-head{gap:8px 12px}
+  .th-head p{font-size:14px;line-height:1.5}
+  .th-grid{gap:10px;margin-top:8px}
+  .th-yoke svg{max-height:19vh}
+  .th-result{margin:8px 0 4px}
+  .th-verdict{padding:8px 11px}
+  .th-verdict em{font-size:13.5px;line-height:1.5}
+  .th-detail .note{margin-top:6px;font-size:13px}
+  /* Why count? */
+  .th-why-back{margin-bottom:8px}
+  .th-why-h{margin-bottom:6px}
+  .th-why p{font-size:14px;line-height:1.5;margin-bottom:10px}
+  .why-pair{gap:10px}
+  .why-pair figure{padding:6px 8px 8px}
+  .why-pair figcaption{font-size:13.5px;line-height:1.45;margin-top:4px}
+  .why-svg .why-n{font-size:15px}
+  .why-svg .why-l{font-size:15px}
+
+  /* labels that render under 12 px on a phone (drawing units, scaled down) */
+  .clamp-svg .cl-s{font-size:19px}
+  .clamp-svg .cl-h{font-size:20px}
+  /* at that size the close-to-the-frame clamp label meets "to tensioner" */
+  .clamp-svg text.cl-s[x="410"]{transform:translateX(-34px)}
+  .wq-svg .wq-n{font-size:16px}
+  .wq-svg .wq-l{font-size:15.6px}
+  .wq-svg .wq-n.alt{transform:translateY(18px)}
+  .ho-svg .ho-n{font-size:16px}
+  .mc-svg .mc-l{font-size:13px}
+  .knot-svg text{font-size:8.9px}
+  /* the grommet's two-line note under the knot: 12 px on a 360 px phone,
+     the lines spread to the depth of the frame band they sit on */
+  .knot-svg text[font-size="6.5"]{font-size:10.4px;transform:translateY(-2.5px)}
+  .knot-svg text[font-size="6.5"]+text[font-size="6.5"]{transform:translateY(-1px)}
+  .sk-svg text[font-size="8.5"],.sk-svg text[font-size="9"],.sk-svg text[font-size="9.5"]{font-size:10px}
+
+  /* past step 1 the first-time card is one slim line */
+  .primer.slim{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 12px;margin-bottom:12px}
+  .primer.slim p{font-size:0;padding:0;margin:0;flex:none}
+  .primer.slim p b{font-size:13px}
+  .primer.slim .primer-links{flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:0 14px}
+  .primer.slim .primer-links::-webkit-scrollbar{display:none}
+  .primer.slim .primer-links .linkbtn{white-space:nowrap;font-size:13px}
+  .primer.slim .primer-x{position:static;flex:none}
+
+  /* step 5: the walk-through drawing pins, compact, and its cards scroll under it */
+  .step-b > .stage[data-view=start]{position:sticky;top:0;z-index:6;background:var(--bg);
+    padding-bottom:6px;margin-bottom:10px;box-shadow:0 10px 14px -10px rgba(0,0,0,.9)}
+  .step-b > .stage[data-view=start] #doArt .racket-svg{max-height:30vh}
+}
+/* the slim first-time line on a wide screen too, once you are past step 1 */
+@media(min-width:641px){
+  .primer.slim{display:flex;align-items:center;gap:14px;padding:7px 10px 7px 14px}
+  .primer.slim p{margin:0;padding:0}
+  .primer.slim .primer-x{position:static;margin-left:auto}
+}
+
+/* the tilt view takes the gesture itself: no page scroll or browser zoom under a drag or pinch */
+.th-tilt .tilt-viewport{touch-action:none}
+.tilt-layer,.tilt-face{backface-visibility:hidden}
+@media(hover:none),(max-width:900px){.tilt-face svg{filter:none}}
+
+/* step specs on a phone: up to three share one row, four wrap two by two */
+@media(max-width:640px){
+  .spec-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px}
+  .spec-strip:has(> li:nth-child(4)){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .spec-strip em{letter-spacing:.06em}
+}
+
+
+/* Racket on a phone: small brand chips, the model, a small drawing with its
+   tension range right beside it, and the way on at the end, full width */
+@media(max-width:640px){
+  #tab-racket .layout{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  #tab-racket .controls{display:contents}
+  #tab-racket .screen-h{order:1;margin-bottom:12px}
+  #tab-racket .fieldset{order:2;padding:12px 0}
+  #tab-racket .fieldset:first-of-type{padding-top:0}
+  #tab-racket .fieldset h2{margin-bottom:8px}
+  #tab-racket .stage{order:3;gap:0;margin-top:4px}
+  #tab-racket .cta-row{order:4;margin-top:14px}
+  #tab-racket .cta-row .btn{flex:1 1 100%}
+  #tab-racket .seg.grid4{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  #tab-racket .seg.grid4 button{min-height:40px;padding:0 2px;font-size:12.5px}
+  #tab-racket .stage-art{padding:8px;border-radius:var(--r) var(--r) 0 0}
+  #tab-racket .racket-svg{max-height:32vh;width:auto;max-width:100%}
+  #tab-racket .facts{display:block;border:1px solid var(--line);border-top:0;border-radius:0 0 var(--r) var(--r);
+    background:var(--well)}
+  #tab-racket .facts>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:8px 12px}
+  #tab-racket .facts dd{margin:0}
+  #tab-racket .facts dd em{display:inline;margin:0 0 0 8px}
+}

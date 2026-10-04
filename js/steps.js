@@ -121,9 +121,9 @@ const Steps = (function () {
        up. The plan is right about where the string is, but stringing references
        prefer crosses head to throat, so say so on that path only. */
     /* On a one piece the frame decides this: the crosses start wherever the
-       long side's last main comes out. Throat up is normal then, just a little
-       harder on the frame, so it is a notice, not a warning off the method. */
-    const upNote = 'On this frame the crosses go from the throat up, which is fine. It just puts a little more stress on the frame, so check it stays square in the mounts.';
+       long side's last main comes out. Most makers advise against crosses
+       from the throat up, so this steers the reader to two piece. */
+    const upNote = 'On this frame a one piece runs the crosses from the throat up. Most makers advise against that because it can stretch the hoop. Use two piece instead.';
     /* The one-piece line in the method step describes that method whichever
        one is selected, so it gets its own plan. */
     const plOne = plan(throatPairs, 'one', nC, nM);
@@ -237,6 +237,11 @@ const Steps = (function () {
       `<button type="button" class="linkbtn inline-link" data-goto="knot" data-knot="finish">${label}</button>`;
     const MEASURE_TIP = `A handy way to measure: use your wingspan or your racket.`;
     const bothR = v => `<b>${Fmt.metresOnly(v)}</b> (${Fmt.feet(v)})`;
+    /* A hybrid takes each plane from a different string, so there is no set to halve */
+    const hybrid = mainString.id !== crossString.id;
+    const mainKind = (mainString.type || mainString.name).toLowerCase();
+    const crossKind = (crossString.type || crossString.name).toLowerCase();
+    const hasGut = [mainString, crossString].some(x => /natural gut/i.test(x.type || x.name || ''));
 
     steps.push({
       id: 'measure', stage: 'empty', title: 'Measure your string',
@@ -250,7 +255,8 @@ const Steps = (function () {
             ? 'One piece: one string does the mains and the crosses, with no starting knot.'
             : 'Two piece: one length for the mains and one for the crosses.'}
           Chosen on the String tab.${onePiece && mainString.id !== crossString.id
-            ? ' <b>A hybrid needs two piece</b>, so change it there before you cut.' : ''}</p>`,
+            ? ' <b>A hybrid needs two piece</b>, so change it there before you cut.' : ''}${onePiece && crossUp
+            ? ` ${upNote}` : ''}</p>`,
         actions: onePiece ? [
           `<b>Using a packaged set?</b> Open it and use all of the string. Do not trim it first.
            This job leaves about <b>${m1(spare)} m</b> over.`,
@@ -259,11 +265,19 @@ const Steps = (function () {
            <b>${m1(oneShort)} m</b> hangs on one side and the rest on the other. Keep it continuous,
            do not cut it into separate mains and cross pieces.`,
           MEASURE_TIP
+        ] : hybrid ? [
+          `<b>Hybrid:</b> cut the mains from your ${mainKind} and the crosses from your ${crossKind}, to the
+           lengths below.`,
+          `<b>Mains:</b> ${bothR(cut.mains)} of ${mainKind}. <b>Crosses:</b> ${bothR(cut.crosses)} of
+           ${crossKind}.`,
+          ...(hasGut ? [`Natural gut: don't kink it or grip it with pliers.`] : []),
+          MEASURE_TIP
         ] : [
           `<b>Using a packaged set?</b> Cut it into <b>two equal halves</b>, one for the mains and one for
            the crosses.`,
           `<b>Cutting from a reel?</b> Cut ${bothR(cut.mains)} for the mains and ${bothR(cut.crosses)} for
            the crosses.`,
+          ...(hasGut ? [`Natural gut: don't kink it or grip it with pliers.`] : []),
           MEASURE_TIP
         ],
         watch: `Cutting too much is always better than cutting too little. If a piece comes up short, you have to start it again.`,
@@ -288,7 +302,7 @@ const Steps = (function () {
           `Just above the ${g('throat')}, count the <b>sets of main holes</b>. A set is one pair of holes,
            one on each side of the center line.`,
           `<b>3 sets</b>: the mains start at the throat. <b>4 sets</b>: they start at the head.`,
-          `This racket is set to <b>${throatPairs} sets</b>, so the mains start at the
+          `This racket has <b>${throatPairs} sets</b>, so the mains start at the
            <b>${pl.mainsStart}</b> and finish at the <b>${pl.mainsEnd}</b>.`
         ],
         watch: `If the count is not obvious, most frames print the pattern and the tie-off holes inside the

@@ -95,7 +95,7 @@ const Wizard = (function () {
           <div><dt>Mains</dt><dd>${strung(draft.tMain)}</dd></div>
           <div><dt>Crosses</dt><dd>${strung(draft.tCross)}</dd></div>
           <div><dt>Method</dt><dd>${draft.method === 'one' ? 'One piece · 2 knots' : 'Two piece · 4 knots'}</dd></div>
-          <div><dt>String needed</dt><dd>${Fmt.metres(st.totalM)} · cut ${Fmt.metres(Fmt.cutFor(st, draft.method === 'one'))}</dd></div>
+          <div><dt>Cut</dt><dd>${Fmt.metres(Fmt.cutFor(st, draft.method === 'one'))}</dd></div>
         </dl>`;
     }
   };
@@ -111,7 +111,7 @@ const Wizard = (function () {
       </div>
       <div class="wz-body">${panes[name]()}</div>
       <div class="wz-nav">
-        <button type="button" class="btn ghost" data-wz="back">Back</button>
+        ${stepIx ? '<button type="button" class="btn ghost" data-wz="back">Back</button>' : ''}
         <button type="button" class="btn primary" data-wz="next">${last ? 'Start stringing' : 'Next'}</button>
       </div>`;
     /* on the review the next move is Start, so focus goes there */

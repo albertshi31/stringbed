@@ -8,7 +8,7 @@ const MachineGuide = (function () {
       price: '$150 to $600',
       job: 'dropweight',
       how: 'Affordable, and gravity keeps it pulling the whole time. It depends on your technique more than the other two.',
-      physics: 'A weighted bar hangs on a ratchet, so the tension comes from a known weight at a known distance. There is no spring or load cell to wear out. Lift the bar 30 to 45° above level and let go. Gravity lowers it, the ratchet holds what it gains, and it comes to rest level, which is where the tension is correct. The pull follows the cosine of the bar angle, so a bar 20° off level is pulling about 6% under. A small angle means a small error. Friction in the drum and ratchet takes a little more off, so you still need a calibrator.',
+      physics: 'A weighted bar hangs on a ratchet, so the tension comes from a known weight at a known distance. There is no spring or load cell to wear out. Lift the bar slightly above level and let go. Gravity lowers it, the ratchet holds what it gains, and it comes to rest level, which is where the tension is correct. The pull follows the cosine of the bar angle, so a bar 20° off level is pulling about 6% under. A small angle means a small error. Friction in the drum and ratchet takes a little more off, so you still need a calibrator.',
       pros: [
         'Cheapest way into real stringing',
         'The tension comes from a weight on a lever, with nothing inside that wears out',

@@ -68,6 +68,10 @@ const RacketSVG = (function () {
     const ink2 = th.instructionInk || th.accent2;
     const beam = beamFor(r.beamMm);
     const a = H.a, bT = H.bT, bB = H.bB;
+    /* minFont is the smallest type, in drawing units, that still reads at
+       12 px on screen at the size this drawing is shown (app.js measures it).
+       Every label is at least that big, and a badge grows with its number. */
+    const fz = base => Math.max(base, o.minFont || 0);
 
     const mainColor = o.mainColor, crossColor = o.crossColor;
     const gM = drawGauge(o.mainGauge), gC = drawGauge(o.crossGauge);
@@ -501,10 +505,10 @@ const RacketSVG = (function () {
               stroke-width="3.2" stroke-linecap="round"/>
           </g>`;
         // the number belongs at the CONTACT, beside the pad, not out on the arm
-        const bg = at(7, 21);
-        front += `<circle cx="${f(bg[0])}" cy="${f(bg[1])}" r="8" fill="#0d1013"
-            stroke="${ink}" stroke-width="1.4"/>
-          <text x="${f(bg[0])}" y="${f(bg[1] + 3.4)}" text-anchor="middle" font-size="10"
+        const bg = at(7, 21), bk = fz(10) / 10;
+        front += `<circle cx="${f(bg[0])}" cy="${f(bg[1])}" r="${f(8 * bk)}" fill="#0d1013"
+            stroke="${ink}" stroke-width="${f(1.4 * bk)}"/>
+          <text x="${f(bg[0])}" y="${f(bg[1] + 3.4 * bk)}" text-anchor="middle" font-size="${f(10 * bk)}"
             font-weight="800" font-family="Inter, Helvetica, Arial, sans-serif"
             fill="${ink}">${n}</text>`;
       });
@@ -815,9 +819,9 @@ const RacketSVG = (function () {
         /* labelScale lets a small on-screen drawing (a phone) ask for bigger
            type, so the chip text never renders under ~10 px. A chip that would
            then outgrow the box wraps onto a second line instead. */
-        const fs = 10 * Math.max(1, o.labelScale || 1);
+        const fs = fz(10 * Math.max(1, o.labelScale || 1));
         // bold type runs wider than 0.55 em a letter; the scaled-up phone chips showed it
-        const cw = (o.labelScale || 1) > 1 ? 0.6 : 0.55;
+        const cw = fs > 10 ? 0.6 : 0.55;
         const maxCh = Math.max(8, Math.floor((vb[2] - 20) / (fs * cw)));
         const lines = [];
         String(txt).split(' ').forEach(wd => {
@@ -919,15 +923,21 @@ const RacketSVG = (function () {
       // hole count re-read here -- same fact, one owner
       const anchorBottom = (o.mainsStart || 'throat') === 'throat';
       /* the three actions are separate things, so each one is numbered:
-         1 pull the string through · 2 tension it · 3 clamp it */
-      const badge = (x, y, n, label, note) =>
+         1 pull the string through · 2 tension it · 3 clamp it. A small
+         neutral square, so a number can never be mistaken for a knot marker,
+         which is a round accent ring. bk grows the chip on a small drawing,
+         and sp moves the chips apart by as much as they grew. The chips are
+         gone on the tie-off frame, where the knots are the point. */
+      const bk = fz(12) / 12, sp = (bk - 1) * 10;
+      const badge = (x, y, n, label, note) => o.tied ? '' :
         `<g class="hint-dot" tabindex="0" role="img" aria-label="${esc(label)}"
-           data-label="${esc(label)}" data-note="${esc(note)}">
-           <circle cx="${f(x)}" cy="${f(y)}" r="16" fill="transparent"/>
-           <circle class="hint-ring" cx="${f(x)}" cy="${f(y)}" r="10" fill="${ink}"
+           data-label="${esc(label)}" data-note="${esc(note)}"
+           transform="translate(${f(x)} ${f(y)}) scale(${f(bk)})">
+           <circle cx="0" cy="0" r="15" fill="transparent"/>
+           <rect class="hint-ring" x="-8.5" y="-8.5" width="17" height="17" rx="4.5" fill="#d3d9e1"
              stroke="#080a0e" stroke-width="1.4"/>
-           <text x="${f(x)}" y="${f(y + 4.6)}" text-anchor="middle" font-size="13" font-weight="800"
-             font-family="Inter, Helvetica, Arial, sans-serif" fill="#080a0e">${n}</text>
+           <text x="0" y="4.3" text-anchor="middle" font-size="12" font-weight="800"
+             font-family="Inter, Helvetica, Arial, sans-serif" fill="#0b0e12">${n}</text>
          </g>`;
       let g = '';
       if (stage === 'mains') {
@@ -943,17 +953,18 @@ const RacketSVG = (function () {
             const pB = [m.x, prevTop ? m.top : m.bottom];
             g += routeGlyph(pA, pB, 0).replace('class="route"', 'class="route-still"');
             const nm = H.normal(pB[0], pB[1]);
-            g += badge((pA[0] + pB[0]) / 2 + nm[0] * 22, (pA[1] + pB[1]) / 2 + nm[1] * 22, 1,
+            g += badge((pA[0] + pB[0]) / 2 + nm[0] * (22 + sp), (pA[1] + pB[1]) / 2 + nm[1] * (22 + sp), 1,
               'Pull it through', 'Take the string over the outside of the frame from the hole it just came out of, and pull it through this one. Do not tension it yet. You are only threading it.');
           }
           const gy = pulledTop ? m.top - 24 : m.bottom + 24;
           g += gripGlyph(m.x, gy, pulledTop ? -1 : 1, 0)
                  .replace('class="grip"', 'class="grip-still"');
-          g += badge(m.x + 20, gy, 2, 'Tension it',
+          const out = pulledTop ? -1 : 1;
+          g += badge(m.x + 20 + sp, gy + out * sp, 2, 'Tension it',
             `Put the gripper on the free end and pull to ${o.tension || 'reference'} lb. The machine end alternates top and bottom, because the string runs up one main and back down the next.`);
           const cy2 = pulledTop ? m.top + 9 : m.bottom - 9;
           g += clampGlyph(m.x, cy2, 'v', 0, true);
-          g += badge(m.x + 20, cy2, 3, 'Clamp it',
+          g += badge(m.x + 20 + sp, cy2 - out * sp, 3, 'Clamp it',
             'Clamp goes on the string you just pulled, as close to the grommet as it will sit. Then the clamp behind it comes free for the next string.');
           const left = 1 - (n + 0.5) / (bed.mains.length / 2);
           g += tailGlyph(m.x, pulledTop ? m.top - 3 : m.bottom + 3, pulledTop ? -1 : 1,
@@ -966,16 +977,17 @@ const RacketSVG = (function () {
           // same rule as the animation: pulled out the far side from where it
           // was fed in, alternating with every cross
           const right = ((stepIdx - 1) % 2 === 0) !== ((o.crossStartSide || 1) > 0);
-          g += badge(right ? c.left + 18 : c.right - 18, c.y - 15, 1, 'Weave it through',
+          g += badge(right ? c.left + 18 + sp : c.right - 18 - sp, c.y - 15 - sp, 1, 'Weave it through',
             'Over, under, over, under across every main, then pull the whole length out the far side. Weave one or two ahead so you always have slack to work with.');
           const gx = right ? c.right + 27 : c.left - 27;
           g += gripGlyph(gx, c.y, right ? -1 : 1, 0, 90)
                  .replace('class="grip"', 'class="grip-still"');
-          g += badge(gx, c.y - 21, 2, 'Tension it',
+          const outX = right ? 1 : -1;
+          g += badge(gx + outX * sp, c.y - 21 - sp, 2, 'Tension it',
             `Put the gripper on the end you pulled through. Tension it to ${o.tension || 'reference'} lb, then straighten the cross with your fingers.`);
           const kx = right ? c.right - 9 : c.left + 9;
           g += clampGlyph(kx, c.y, 'h', 0, true);
-          g += badge(kx, c.y - 21, 3, 'Clamp it',
+          g += badge(kx - outX * sp, c.y - 21 - sp, 3, 'Clamp it',
             'Clamp on the side you pulled from, hard against the frame. It alternates left and right as the weave crosses and comes back.');
         }
       }
@@ -1078,13 +1090,29 @@ const RacketSVG = (function () {
     // ---------------- knots ----------------
     if (o.knots && o.knots.length) {
       p.push(`<g class="knots" style="--d:${f(lastString + 0.3)}s${o.animate ? ';opacity:0' : ''}">`);
-      o.knots.forEach(k => {
-        const q = onStrip(k.x, k.y, 0.3);
-        const ms = o.markScale || 1;      // the guide view is smaller on screen
+      const ms = o.markScale || 1;        // the guide view is smaller on screen
+      /* Two knots can land a hole or two apart (a two-piece cross finishing
+         beside the main tie-off), and their rings drew on top of each other.
+         Push any close pair apart along the line between them, so both rings
+         and both targets stay whole. */
+      const qs = o.knots.map(k => onStrip(k.x, k.y, 0.3));
+      const gap = (2 * 8.5 + 6) * ms;
+      for (let i = 0; i < qs.length; i++) for (let j = i + 1; j < qs.length; j++) {
+        const dx = qs[j][0] - qs[i][0], dy = qs[j][1] - qs[i][1], d = Math.hypot(dx, dy);
+        if (d >= gap) continue;
+        const ux = d ? dx / d : 1, uy = d ? dy / d : 0, push = (gap - d) / 2;
+        qs[i] = [qs[i][0] - ux * push, qs[i][1] - uy * push];
+        qs[j] = [qs[j][0] + ux * push, qs[j][1] + uy * push];
+      }
+      // hitR: how far a fingertip may land and still take the marker (app.js
+      // asks for about 20 px on a touch screen)
+      const hit = Math.max(12 * ms, o.hitR || 0);
+      o.knots.forEach((k, ki) => {
+        const q = qs[ki];
         // a little knotted-string glyph rather than a plain dot
         p.push(`<g class="knot" tabindex="0" role="img" data-label="${esc(k.label)}"
           data-lesson="${k.lesson === 'start' ? 'start' : 'finish'}" data-note="${esc(k.note || '')}">
-          <circle class="knot-hit" cx="${f(q[0])}" cy="${f(q[1])}" r="${f(12 * ms)}" fill="transparent"/>
+          <circle class="knot-hit" cx="${f(q[0])}" cy="${f(q[1])}" r="${f(hit)}" fill="transparent"/>
           <circle cx="${f(q[0])}" cy="${f(q[1])}" r="${f(6.8 * ms)}" fill="none"
             stroke="#05070b" stroke-opacity="0.78" stroke-width="${f(3.2 * ms)}"/>
           <circle class="knot-halo" cx="${f(q[0])}" cy="${f(q[1])}" r="${f(8.5 * ms)}" fill="none"
@@ -1099,7 +1127,7 @@ const RacketSVG = (function () {
     if (rig) {
       p.push(rig.front);
       // at the bottom: the pattern label already owns the top of the box
-      p.push(`<text x="0" y="${f(vb[1] + vb[3] - 12)}" text-anchor="middle" font-size="12"
+      p.push(`<text x="0" y="${f(vb[1] + vb[3] - 12)}" text-anchor="middle" font-size="${f(fz(12))}"
         font-weight="800" letter-spacing="2.4" font-family="Inter, Helvetica, Arial, sans-serif"
         fill="${ink}">SIX-POINT MOUNT</text>`);
     }
@@ -1108,12 +1136,12 @@ const RacketSVG = (function () {
 
     // ---------------- markings ----------------
     if (!headOnly) {
-      p.push(`<text x="0" y="${f(shaftTop + 24)}" text-anchor="middle" font-size="8"
+      p.push(`<text x="0" y="${f(shaftTop + 24)}" text-anchor="middle" font-size="${f(fz(8))}"
         font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="0.8"
         fill="${ink2}" fill-opacity="0.75">${esc(racketName(r).toUpperCase())}</text>`);
     }
     // the stepped views have their own caption, and the badges live up here
-    if (!beatView && !o.hideLabel) p.push(`<text x="0" y="${f(REF_TOP + (RIG ? 12 : 14))}" text-anchor="middle" font-size="9.5"
+    if (!beatView && !o.hideLabel) p.push(`<text class="pat-label" x="0" y="${f(REF_TOP + (RIG ? 12 : 14) + (fz(9.5) - 9.5) * 0.8)}" text-anchor="middle" font-size="${f(fz(9.5))}"
       font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="2.4"
       fill="${ink2}" fill-opacity="0.55">${esc(bed.patternLabel.toUpperCase())}</text>`);
 
@@ -1123,14 +1151,14 @@ const RacketSVG = (function () {
       const cy = y => y * SQ;
       const brY = cy(bB + THROAT * 0.20);
       // the line stops above the numbers, so it never runs through one
-      const numTop = labels.length ? Math.min(...labels.map(l => cy(l[1]))) - 15 - 12 : brY - 4;
+      const numTop = labels.length ? Math.min(...labels.map(l => cy(l[1]))) - 15 - fz(9.5) * 1.25 : brY - 4;
       p.push(`<line x1="0" y1="${f(vb[1] + 20)}" x2="0" y2="${f(numTop)}"
         stroke="${ink}" stroke-opacity="0.55" stroke-width="1.2" stroke-dasharray="5 5"/>`);
-      p.push(`<text x="0" y="${f(vb[1] + 13)}" text-anchor="middle" font-size="8.5"
+      p.push(`<text x="0" y="${f(vb[1] + 13 + (fz(8.5) - 8.5) * 0.8)}" text-anchor="middle" font-size="${f(fz(8.5))}"
         font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="0.5"
         fill="${ink}" fill-opacity="0.85">CENTER LINE</text>`);
       labels.forEach(([x, y, n]) => {
-        p.push(`<text x="${f(x)}" y="${f(cy(y) - 15)}" text-anchor="middle" font-size="9.5"
+        p.push(`<text x="${f(x)}" y="${f(cy(y) - 15)}" text-anchor="middle" font-size="${f(fz(9.5))}"
           font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700"
           fill="${ink}">${n}</text>`);
       });
@@ -1138,12 +1166,17 @@ const RacketSVG = (function () {
         const bx = yokeLimit + 4, by = brY;
         p.push(`<path d="M${f(-bx)},${f(by - 3)} L${f(-bx)},${f(by)} L${f(bx)},${f(by)} L${f(bx)},${f(by - 3)}"
           fill="none" stroke="${ink}" stroke-opacity="0.8" stroke-width="1.1"/>`);
-        p.push(`<text x="0" y="${f(by + 13)}" text-anchor="middle" font-size="8.5"
+        p.push(`<text x="0" y="${f(by + 13 + (fz(8.5) - 8.5) * 0.8)}" text-anchor="middle" font-size="${f(fz(8.5))}"
           font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="0.6"
           fill="${ink}" fill-opacity="0.9">THROAT HOLES &#183; ${o.markThroatPairs} SETS</text>`);
+        /* Type sized up for a phone runs "not counted" into the outer holes,
+           so there it lifts a line above the hole numbers, clear of the frame
+           and far enough from the 3 not to read as part of it. */
+        const numY = labels.length ? Math.min(...labels.map(l => cy(l[1]))) - 15 : cy(bB) - 6;
+        const ncY = fz(8) > 8 ? Math.min(cy(bB) - 6, numY - fz(9.5) * 1.3) : cy(bB) - 6;
         [-1, 1].forEach(side => {
-          p.push(`<text x="${f(side * (-vb[0] - 8))}" y="${f(cy(bB) - 6)}"
-            text-anchor="${side < 0 ? 'start' : 'end'}" font-size="8"
+          p.push(`<text x="${f(side * (-vb[0] - 8))}" y="${f(ncY)}"
+            text-anchor="${side < 0 ? 'start' : 'end'}" font-size="${f(fz(8))}"
             font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600"
             fill="${ink2}" fill-opacity="0.7">not counted</text>`);
         });

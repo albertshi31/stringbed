@@ -27,11 +27,17 @@ const Throat = (function () {
      * ~22 mm deep beam, so edge-on you see a band, not a hairline. Stacking
      * dim copies along Z builds that band, shading from a lit near edge to a
      * dark far one. */
-    const DEPTH = 13, STEP = 2.1;
+    /* A phone redraws every layer on every frame of a drag, and a CSS filter
+       per layer is what made it stutter. Fewer layers there, shaded with
+       opacity, which is cheap, instead of filters. */
+    const lite = !!(window.matchMedia && window.matchMedia('(hover: none), (max-width: 900px)').matches);
+    const DEPTH = lite ? 5 : 13, STEP = lite ? 5.4 : 2.1;
     const depth = Array.from({ length: DEPTH }, (_, i) => {
       const t2 = i / (DEPTH - 1);
-      return `<div class="tilt-layer" aria-hidden="true" style="transform:translateZ(${-(i + 1) * STEP}px);
-        filter:brightness(${(0.72 - t2 * 0.45).toFixed(2)}) saturate(${(0.9 - t2 * 0.35).toFixed(2)})"
+      const shade = lite
+        ? `opacity:${(0.55 - t2 * 0.35).toFixed(2)}`
+        : `filter:brightness(${(0.72 - t2 * 0.45).toFixed(2)}) saturate(${(0.9 - t2 * 0.35).toFixed(2)})`;
+      return `<div class="tilt-layer" aria-hidden="true" style="transform:translateZ(${-(i + 1) * STEP}px);${shade}"
         >${decorative(depthSvg)}</div>`;
     }).join('');
     const th = racket.theme;
@@ -47,15 +53,18 @@ const Throat = (function () {
        the next. Only the first few holes (the sets you count) sit on the bridge
        between the two throat arms; the next one is past an arm. Start from the
        right end and every throat-side loop joins two holes on the same side of
-       an arm. Start from the wrong end and one loop has to get from the last
+       an arm. Start from the wrong end and the loop on each side has to get from the last
        bridge hole to the first hole past the arm, straight through the arm. */
     const whySvg = startAt => {
-      const n = throatPairs, W = 380, H = 262, cx = 190, PER = 6, GAP = 22;
+      const n = throatPairs, W = 380, H = 270, cx = 190, PER = 6, GAP = 22, TOP = 54;
       const yAt = off => 150 - 0.0026 * off * off;            // the bottom of the hoop
       const off = k => 11 + GAP * (k - 1);                      // hole k from the center line
       const armOff = GAP * n;                                   // where each throat arm meets the hoop
       const C = { frame: '#3a4049', edge: '#59616c', main: '#c3ccd7', loop: '#f2f0ea',
                   ok: '#79cfa4', bad: '#e8b268', hole: '#9aa3b0', ink: '#c3ccd7' };
+      /* One row for the hole numbers, under the deepest loop, so no number
+         sits in a loop, under the X, or on the bridge line below it. */
+      const ROW = yAt(0) + 40, BRIDGE = ROW + 11;
       let g = '';
       // the hoop's bottom, as a band
       const band = [];
@@ -75,41 +84,50 @@ const Throat = (function () {
       // the mains running up from their holes
       for (let k = 1; k <= reach; k++) [-1, 1].forEach(sd => {
         const x = cx + sd * off(k);
-        g += `<line x1="${x}" y1="${yAt(off(k)) - 9}" x2="${x}" y2="6" stroke="${C.main}" stroke-width="2" stroke-opacity="${k > 4 ? 0.55 : 0.9}"/>`;
+        g += `<line x1="${x}" y1="${yAt(off(k)) - 9}" x2="${x}" y2="${TOP}" stroke="${C.main}" stroke-width="2" stroke-opacity="${k > 4 ? 0.55 : 0.9}"/>`;
       });
+      /* Starting at the throat, the string is fed up the two center holes, so
+         its middle is a loop across the center line at the throat. Starting at
+         the head, that middle loop is at the head, off this drawing. */
+      if (startAt === 'throat') {
+        const a = cx - off(1), b = cx + off(1), y = yAt(off(1)) + 9;
+        g += `<path d="M${a},${y} C${a},${y + 16} ${b},${y + 16} ${b},${y}" fill="none" stroke="${C.loop}"
+          stroke-width="3" stroke-linecap="round"/>`;
+      }
       // throat-side loops: starting at the throat, mains 1 and 2 join at the head, so the
       // throat loops are 2-3, 4-5, ...; starting at the head they are 1-2, 3-4, ...
-      let blocked = null;
+      const blocked = [];
       for (let k = first; k + 1 <= PER && k <= reach; k += 2) [-1, 1].forEach(sd => {
         const a = cx + sd * off(k), b = cx + sd * off(k + 1), ya = yAt(off(k)) + 9, yb = yAt(off(k + 1)) + 9;
         const crosses = k <= n && k + 1 > n;
         const col = crosses ? C.bad : C.loop;
         g += `<path d="M${a},${ya} C${a},${ya + 18} ${b},${yb + 18} ${b},${yb}" fill="none" stroke="${col}"
           stroke-width="3" stroke-linecap="round" ${crosses ? 'stroke-dasharray="5 4"' : ''}/>`;
-        if (crosses && sd > 0) blocked = { x: cx + armOff, y: yAt(armOff) + 18 };
+        // the X sits on the loop, nudged outward, clear of the number row
+        if (crosses) blocked.push({ x: (a + b) / 2 + sd * 9, y: Math.max(ya, yb) + 6 });
       });
-      // the holes, numbered outward from the center, the ones on the bridge highlighted
+      // the holes, the ones on the bridge highlighted, numbered outward from the center
       for (let k = 1; k <= PER; k++) [-1, 1].forEach(sd => {
         const x = cx + sd * off(k), y = yAt(off(k));
         g += `<rect x="${x - 3}" y="${y - 7}" width="6" height="14" rx="2.5" fill="${k <= n ? '#4cc9e0' : C.hole}"
           stroke="#05070a" stroke-width="1"/>`;
-        if (sd > 0) g += `<text x="${x}" y="${y + 34}" text-anchor="middle" class="why-n">${k}</text>`;
+        if (sd > 0) g += `<text x="${x}" y="${ROW}" text-anchor="middle" class="why-n${k <= n ? ' on' : ''}">${k}</text>`;
       });
-      // the bridge, and what goes wrong
-      g += `<path d="M${cx - armOff + 6},${yAt(armOff) + 46} L${cx + armOff - 6},${yAt(armOff) + 46}" stroke="#4cc9e0"
+      // the bridge: the holes between the two arms, under their numbers
+      g += `<path d="M${cx - armOff + 4},${BRIDGE} L${cx + armOff - 4},${BRIDGE}" stroke="#4cc9e0"
           stroke-width="1.2" stroke-dasharray="3 3"/>
-        <text x="${cx}" y="${yAt(armOff) + 60}" text-anchor="middle" class="why-l" fill="#4cc9e0">${n} sets on the bridge</text>`;
-      if (blocked) {
-        g += `<path d="M${blocked.x - 9},${blocked.y - 9} l18,18 M${blocked.x + 9},${blocked.y - 9} l-18,18"
-            stroke="#ef4444" stroke-width="3.6" stroke-linecap="round"/>
-          <text x="${W - 10}" y="${H - 34}" text-anchor="end" class="why-l" fill="${C.bad}">this loop has to</text>
-          <text x="${W - 10}" y="${H - 20}" text-anchor="end" class="why-l" fill="${C.bad}">go through the arm</text>`;
-      } else {
-        g += `<text x="${W - 12}" y="${H - 34}" text-anchor="end" class="why-l" fill="${C.ok}">every loop stays</text>
-          <text x="${W - 12}" y="${H - 20}" text-anchor="end" class="why-l" fill="${C.ok}">clear of the arms</text>`;
-      }
-      return `<svg viewBox="0 0 ${W} ${H}" class="why-svg" role="img" aria-label="${blocked
-        ? 'Starting from the ' + startAt + ': one loop on the throat side would have to pass through the throat arm.'
+        <text x="${cx}" y="${BRIDGE + 17}" text-anchor="middle" class="why-l" fill="#4cc9e0">${n} sets on the bridge</text>`;
+      blocked.forEach(b => {
+        g += `<path d="M${b.x - 8},${b.y - 8} l16,16 M${b.x + 8},${b.y - 8} l-16,16"
+            stroke="#ef4444" stroke-width="3.4" stroke-linecap="round"/>`;
+      });
+      g += blocked.length
+        ? `<text x="${W - 8}" y="${H - 26}" text-anchor="end" class="why-l" fill="${C.bad}">the loop each side</text>
+          <text x="${W - 8}" y="${H - 8}" text-anchor="end" class="why-l" fill="${C.bad}">hits a throat arm</text>`
+        : `<text x="${W - 8}" y="${H - 26}" text-anchor="end" class="why-l" fill="${C.ok}">every loop stays</text>
+          <text x="${W - 8}" y="${H - 8}" text-anchor="end" class="why-l" fill="${C.ok}">clear of the arms</text>`;
+      return `<svg viewBox="0 ${TOP} ${W} ${H - TOP}" class="why-svg" role="img" aria-label="${blocked.length
+        ? 'Starting from the ' + startAt + ': the loop on each side of the throat would have to pass through a throat arm.'
         : 'Starting from the ' + startAt + ': every loop on the throat side joins two holes on the same side of an arm.'}">${g}</svg>`;
     };
     const host = document.getElementById('throatModal');
@@ -126,18 +144,22 @@ const Throat = (function () {
         <div class="th-why" hidden>
           <button type="button" class="btn ghost th-why-back">&larr; Back to counting</button>
           <h2 class="th-why-h">Why count?</h2>
-          <p>Start from the wrong end and one loop at the throat has to pass through a throat arm. You can't
-            string that, so you're stuck and have to start over.</p>
+          <p>Start from the wrong end and the loop on each side of the throat has to pass through a throat
+            arm. You can't string that, so you're stuck and have to start over.</p>
           <div class="why-pair">
             <figure>${whySvg(pl.mainsStart)}<figcaption><b>Start at the ${pl.mainsStart}</b> (right for ${throatPairs} sets).
               Loops at the throat pair up holes that sit side by side.</figcaption></figure>
             <figure>${whySvg(pl.mainsStart === 'throat' ? 'head' : 'throat')}<figcaption><b>Start at the
-              ${pl.mainsStart === 'throat' ? 'head' : 'throat'}</b> (wrong). The dashed loop would have to pass
-              through the throat arm.</figcaption></figure>
+              ${pl.mainsStart === 'throat' ? 'head' : 'throat'}</b> (wrong). The dashed loops, one on each side, would
+              have to pass through the throat arms.</figcaption></figure>
           </div>
         </div>
         <div class="th-grid">
           <div class="th-tilt">
+            <!-- on a phone the whole tipped-back view folds away behind one
+                 line, so the close-up and the result fit on one screen -->
+            <details class="tilt-more" ${narrow ? '' : 'open'}>
+            <summary class="tilt-sum">See the frame tipped back</summary>
             <div class="tilt-viewport">
               <div class="tilt-stage">
                 <div class="tilt-shadow" aria-hidden="true"></div>
@@ -151,11 +173,6 @@ const Throat = (function () {
               </div>
             </div>
             <p class="tilt-cap">The bottom of the hoop is lit up, and the ${throatPairs} sets are ringed on the frame.</p>
-            <!-- on a phone the sliders fold away behind "Tilt and zoom", so the
-                 close-up and the result fit on one screen; pinch and drag
-                 still work on the frame itself -->
-            <details class="tilt-more" ${narrow ? '' : 'open'}>
-            <summary class="tilt-sum">Tilt and zoom</summary>
             <div class="tilt-ctl">
               <!-- 48, not 72. At a raked 72 the hoop squashes to a sliver and
                    the hole sets -- the entire point of the view -- cannot be
@@ -212,7 +229,13 @@ const Throat = (function () {
     const zval = host.querySelector('.zoom-val');
 
     let deg = 48, zoom = 1, px = 0, py = 0, drag = null;
+    let queued = false;
     const apply = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; paint(); });
+    };
+    const paint = () => {
       clampPan();
       stage.style.transform =
         `perspective(1100px) translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) ` +
@@ -225,8 +248,9 @@ const Throat = (function () {
     const clampPan = () => { px = Math.max(-PAN, Math.min(PAN, px)); py = Math.max(-PAN, Math.min(PAN, py)); };
     const setZoom = z => { zoom = Math.max(1, Math.min(MAXZ, z)); zrange.value = zoom; apply(); };
 
-    range.addEventListener('input', e => { deg = +e.target.value; apply(); });
-    zrange.addEventListener('input', e => { zoom = Math.min(MAXZ, +e.target.value); apply(); });
+    const live = () => { stage.style.transition = 'none'; };
+    range.addEventListener('input', e => { live(); deg = +e.target.value; apply(); });
+    zrange.addEventListener('input', e => { live(); zoom = Math.min(MAXZ, +e.target.value); apply(); });
     host.querySelector('.tilt-reset').addEventListener('click', () => {
       zoom = 1; px = py = 0; zrange.value = 1; apply();
     });
@@ -236,19 +260,33 @@ const Throat = (function () {
       e.preventDefault();
       setZoom(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
     }, { passive: false });
+    /* One finger drags, two fingers pinch. touch-action:none on the shell
+       (in the CSS) keeps the page from scrolling under the gesture. */
+    const pts = new Map();
+    let pinch = null;
+    const gap = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
     shell.addEventListener('pointerdown', e => {
       if (e.target.closest('input, button, summary')) return;
-      drag = { x: e.clientX, y: e.clientY, px, py };
-      shell.setPointerCapture(e.pointerId); shell.classList.add('grabbing');
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      shell.setPointerCapture(e.pointerId); shell.classList.add('grabbing'); live();
+      if (pts.size === 2) { pinch = { d: gap(), z: zoom }; drag = null; }
+      else if (pts.size === 1) drag = { x: e.clientX, y: e.clientY, px, py };
     });
     shell.addEventListener('pointermove', e => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && pts.size === 2) { setZoom(pinch.z * gap() / Math.max(1, pinch.d)); return; }
       if (!drag) return;
       px = drag.px + (e.clientX - drag.x);
       py = drag.py + (e.clientY - drag.y);
-      stage.style.transition = 'none'; apply();
+      apply();
     });
-    const endDrag = () => { drag = null; shell.classList.remove('grabbing');
-      stage.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)'; };
+    const endDrag = e => {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) pinch = null;
+      if (pts.size === 1) { const [p] = [...pts.values()]; drag = { x: p.x, y: p.y, px, py }; return; }
+      drag = null; shell.classList.remove('grabbing');
+    };
     shell.addEventListener('pointerup', endDrag);
     shell.addEventListener('pointercancel', endDrag);
 
@@ -257,6 +295,7 @@ const Throat = (function () {
     requestAnimationFrame(() => {
       stage.style.transition = 'transform .75s cubic-bezier(.4,0,.2,1)';
       deg = 48; range.value = 48; apply();
+      setTimeout(live, 800);
     });
 
     const close = () => {

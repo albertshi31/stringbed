@@ -13,14 +13,14 @@
 const WeaveQuiz = (function () {
 
   const N = 6;                         // mains in the close-up
-  const X0 = 112, DX = 50;             // first main's x, spacing: room on the left for the labels
+  const X0 = 120, DX = 50;             // first main's x, spacing: room on the left for the labels
   const VW = 420, VH = 180;            // wide and short, so it fills the quiz's width on any screen
   const PREV_Y = 56, CUR_Y = 118;      // the cross above, and the one being woven
   const MAIN = '#9aa3b0', CROSS = '#f2f0ea', EDGE = '#05070a', ACCENT = '#4cc9e0';
   const ROUNDS = 5;
 
   const CLOSE = { n: N, x0: X0, dx: DX, wm: 6, wc: 7, r: 15 };
-  const WHOLE = { n: 16, x0: 96, dx: 20.4, wm: 4, wc: 5, r: 10 };
+  const WHOLE = { n: 16, x0: 100, dx: 20.2, wm: 4, wc: 5, r: 10 };
   let L = CLOSE;                       // the layout being drawn
   const mx = i => L.x0 + i * L.dx;
   const flip = w => (w === 'over' ? 'under' : 'over');
@@ -53,10 +53,13 @@ const WeaveQuiz = (function () {
   }
 
   function mains(numbered) {
-    let out = Array.from({ length: L.n }, (_, i) => strand(`M${mx(i)},18 L${mx(i)},${VH - 30}`, MAIN, L.wm)).join('');
+    /* numbered, the mains stop short so a phone can drop every other number
+       a row lower (styles.css), where sixteen of them in one row ran together */
+    const end = numbered ? VH - 40 : VH - 30;
+    let out = Array.from({ length: L.n }, (_, i) => strand(`M${mx(i)},18 L${mx(i)},${end}`, MAIN, L.wm)).join('');
     if (numbered) {
       out += Array.from({ length: L.n }, (_, i) =>
-        `<text x="${mx(i)}" y="${VH - 12}" text-anchor="middle" class="wq-n">${i + 1}</text>`).join('');
+        `<text x="${mx(i)}" y="${VH - 23}" text-anchor="middle" class="wq-n${i % 2 ? ' alt' : ''}">${i + 1}</text>`).join('');
     }
     return out;
   }
