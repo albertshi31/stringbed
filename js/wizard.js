@@ -24,7 +24,7 @@ const Wizard = (function () {
   const sg = () => STRINGS.find(s => s.type === draft.kind) || STRINGS[0];
   /* Only the kind is asked. Synthetic gut is the one to learn on. */
   const KINDS = ['Synthetic gut', 'Multifilament', 'Polyester', 'Natural gut'];
-  const mid = r => Math.round((r.tension[0] + r.tension[1]) / 2);
+  const mid = () => 55;   // a sensible middle tension for any frame
   /* the same name the bench uses: no version suffix */
   const modelName = racketName;
   const label = r => `${modelName(r)} · ${r.pattern}`;
@@ -61,7 +61,6 @@ const Wizard = (function () {
         <dl class="wz-facts">
           <div><dt>Stock pattern</dt><dd>${r.pattern}</dd></div>
           <div><dt>Throat holes</dt><dd>${r.throatPairs} sets</dd></div>
-          <div><dt>Recommended tension</dt><dd>${r.tension[0]} to ${r.tension[1]} lb</dd></div>
         </dl>
         <p class="hint">It is strung in its own stock pattern.</p>
         <!-- A catalogue of a few dozen frames will not hold someone's actual racket, and

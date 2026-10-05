@@ -324,9 +324,8 @@
 
     paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
       Object.assign({ noKnots: true }, fit))));
-    facts('racketFacts', [
-      ['Tension range', `${c.r.tension[0]} to ${c.r.tension[1]} lb`, `As ${c.r.brand} marks it on the frame`]
-    ]);
+    // no per-frame tension range: makers change it between generations
+    facts('racketFacts', []);
   }
 
   /* ---------------- 2 · string ---------------- */
@@ -388,19 +387,14 @@
     el('tCross').value = state.tCross;
     el('linkTension').checked = state.linkTension;
     el('tCrossWrap').hidden = state.linkTension;
-    const lo = c.r.tension[0], hi = c.r.tension[1];
-    el('tenRange').textContent = `${c.r.brand} recommends ${lo} to ${hi} lb for this frame.`;
-    /* one short line, naming both planes at once when they are out the same way */
-    const side = v => (v < lo ? 'below' : v > hi ? 'above' : '');
-    const sm = side(state.tMain), sc = side(state.tCross);
-    const same = state.linkTension || state.tMain === state.tCross;
-    let warn = '';
-    if (same && sm) warn = `${state.tMain} lb is ${sm} ${c.r.brand}'s range.`;
-    else if (sm && sm === sc) warn = `Mains and crosses are ${sm} ${c.r.brand}'s range.`;
-    else if (sm || sc) warn = [sm && `Mains are ${sm}`, sc && `Crosses are ${sc}`].filter(Boolean).join(' and ')
-      + ` ${c.r.brand}'s range.`;
+    /* No per-frame range: makers change it between generations, and one
+       general note is all a first job needs. */
+    el('tenRange').textContent = '';
+    el('tenRange').hidden = true;
+    const odd = v => v < 48 || v > 60;
+    const warn = odd(state.tMain) || odd(state.tCross);
     el('tenWarn').hidden = !warn;
-    el('tenWarn').textContent = warn ? warn + ' Most rackets are strung between 48 and 60 lb.' : '';
+    el('tenWarn').textContent = warn ? 'Most rackets are strung between 48 and 60 lb.' : '';
 
     if (!el('selGauge').options.length)
       el('selGauge').innerHTML = GAUGES.map(g =>
