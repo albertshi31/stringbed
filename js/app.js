@@ -324,8 +324,7 @@
 
     paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
       Object.assign({ noKnots: true }, fit))));
-    // no per-frame tension range: makers change it between generations
-    facts('racketFacts', []);
+    // the summary strip already gives the cut length: no fact boxes here
   }
 
   /* ---------------- 2 · string ---------------- */
@@ -418,12 +417,7 @@
     el('stringHint').innerHTML = `<span><b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
       + '. ' + markerWords('string') + '</span>';
 
-    const s = c.stats;
-    const cut = Fmt.cutFor(s, state.method === 'one');
-    facts('stringFacts', [
-      ['Cut', Fmt.metresOnly(cut), `A ${Fmt.SET_M} m set covers it`],
-      [term('stiffness', 'Feel estimate'), s.feel, `About ${s.dt.toFixed(0)} on the stiffness scale`]
-    ]);
+
   }
 
   /* [label, value, note?] -> a row of small blocks. The note is the sentence the
