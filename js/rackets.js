@@ -25,7 +25,7 @@ const RACKETS = [
     beamMm: 21.5,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Pro Staff 97 v14',
+    model: 'Pro Staff 97 v15', // gen: Pro Staff 97 Classic v15 (2026), src: TW skips = v14 Wilson PDF (throat start), inferred
     pattern: '16x19',
     headSize: 97,
     headWidth: 247, headLength: 317, shapeN: 2.36,
@@ -44,7 +44,7 @@ const RACKETS = [
     beamMm: 21.0,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Blade 98 v9',
+    model: 'Blade 98 v9', // gen: Blade v9 (current), src: Wilson v9 98 18x20 PDF "start mains at top"
     pattern: '18x20',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -63,7 +63,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 3,
     brand: 'Babolat',
-    model: 'Pure Drive 100',
+    model: 'Pure Drive 100', // gen: Pure Drive 2025 (Gen11), src: TW skips = Klipper 2021 tie-off 8B, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.35,
@@ -82,7 +82,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 3,
     brand: 'Babolat',
-    model: 'Pure Aero 98',
+    model: 'Pure Aero 98', // gen: Pure Aero 98 2026, src: TW skips = Klipper tie-off 8B, inferred
     pattern: '16x20',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.39,
@@ -101,7 +101,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Radical MP',
+    model: 'Radical MP', // gen: Radical 2025, src: TW skips = HEAD 2023 PDF (head tie-off), inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -120,7 +120,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Speed Pro',
+    model: 'Speed Pro', // gen: Speed 2026, src: TW skips = HEAD Speed Pro 2024 PDF "start at the top", inferred
     pattern: '18x20',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -137,9 +137,9 @@ const RACKETS = [
   {
     id: 'ezone98',
     beamMm: 23.0,
-    throatPairs: 3, // Yonex: start at throat, tie off 8T
+    throatPairs: 3, // Yonex: start at throat, tie off 7T
     brand: 'Yonex',
-    model: 'EZONE 98',
+    model: 'EZONE 98', // gen: EZONE 2025 (8th), src: Yonex chart 2025 "Start @ Throat, tie off 7T"
     pattern: '16x19',
     headSize: 98,
     headWidth: 249, headLength: 300, shapeN: 2.63, // isometric: wide, short, square
@@ -158,7 +158,7 @@ const RACKETS = [
     beamMm: 21.0,
     throatPairs: 3,
     brand: 'Yonex',
-    model: 'VCORE 95',
+    model: 'VCORE 95', // gen: VCORE 8th gen 2026, src: TW skips = Yonex chart (7th gen) throat, inferred
     pattern: '16x20',
     headSize: 95,
     // Isometric: wide and short, and SQUARER than a conventional hoop. A
@@ -181,7 +181,7 @@ const RACKETS = [
     beamMm: 18.5,
     throatPairs: 4,
     brand: 'Prince',
-    model: 'Phantom 100P',
+    model: 'Phantom 100P', // gen: UNCONFIRMED -- 2024 Phantom 100P is 16x18 per TW (unsupported); kept older 18x20
     pattern: '18x20',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.35,
@@ -200,7 +200,7 @@ const RACKETS = [
     beamMm: 21.5,
     throatPairs: 4,
     brand: 'Tecnifibre',
-    model: 'TF40 305',
+    model: 'TF40 305', // gen: TF40 305 18M V3 (2024), src: TW skips; start end unconfirmed
     pattern: '18x20',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -219,7 +219,7 @@ const RACKETS = [
     beamMm: 21.0,
     throatPairs: 3,
     brand: 'Dunlop',
-    model: 'CX 200',
+    model: 'CX 200', // gen: CX 200 (2024), src: TW skips = Klipper Srixon CX 200 tie-off 7B, inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -238,7 +238,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 3, // Solinco: mains tie off 8B, so they start at the throat
     brand: 'Solinco',
-    model: 'Blackout 300 XTD',
+    model: 'Blackout 300 XTD', // gen: Blackout V2 300 XTD (2025), src: solincosports.com (tie off 8B)
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -257,7 +257,7 @@ const RACKETS = [
     beamMm: 20.0,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Prestige Pro',
+    model: 'Prestige Pro', // gen: Prestige 2023 (Auxetic 2, current), src: HEAD/TW
     pattern: '18x20',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.41,
@@ -276,7 +276,7 @@ const RACKETS = [
     beamMm: 24.5,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Clash 100',
+    model: 'Clash 100 v3', // gen: Clash v3 (2025), src: Wilson v3 100 PDF "start mains at throat"
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.35,
@@ -295,7 +295,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 3,
     brand: 'Prince',
-    model: 'Classic Graphite 107',
+    model: 'Classic Graphite 107', // gen: Classic Graphite 107 (unchanged), src: Klipper tie-off 6B, inferred
     pattern: '16x19',
     headSize: 107,
     headWidth: 259, headLength: 333, shapeN: 2.33,
@@ -314,7 +314,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 26.5,
     brand: 'Wilson',
-    model: 'Ultra 100 v4',
+    model: 'Ultra 100 v5', // gen: Ultra v5 (2025), src: Wilson Ultra v5 100 PDF "start mains at throat"
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -333,7 +333,7 @@ const RACKETS = [
     throatPairs: 4,
     beamMm: 21.0,
     brand: 'Babolat',
-    model: 'Pure Strike 98',
+    model: 'Pure Strike 98', // gen: Pure Strike 98 16x19 Gen4 (2024), src: TW skips = Klipper tie-off 7T, inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.35,
@@ -352,7 +352,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 22.0,
     brand: 'HEAD',
-    model: 'Gravity MP',
+    model: 'Gravity MP', // gen: Gravity 2025, src: TW skips = HEAD 2021 PDF "start at the bottom", inferred
     pattern: '16x20',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.39,
@@ -371,7 +371,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 23.0,
     brand: 'HEAD',
-    model: 'Extreme MP',
+    model: 'Extreme MP', // gen: Extreme 2026, src: TW skips = HEAD 2022 PDF "start at the bottom", inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.38,
@@ -390,7 +390,7 @@ const RACKETS = [
     throatPairs: 4,
     beamMm: 21.5,
     brand: 'Tecnifibre',
-    model: 'TFight 305 ISO',
+    model: 'TFight 305S', // gen: TFight 305S (2025) replaces ISO, src: Klipper 305 tie-off 9B (18 mains), inferred
     pattern: '18x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.36,
@@ -409,7 +409,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 20.0,
     brand: 'Solinco',
-    model: 'Whiteout 305',
+    model: 'Whiteout 305', // gen: Whiteout V2 305 XTD, src: solincosports.com (tie off 8B)
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.36,
@@ -428,7 +428,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 23.0,
     brand: 'Dunlop',
-    model: 'FX 500',
+    model: 'FX 500', // gen: FX 500 2026, src: TW skips; 2021 tie-off 8T (throat), inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -447,7 +447,7 @@ const RACKETS = [
     throatPairs: 3,
     beamMm: 23.0,
     brand: 'Dunlop',
-    model: 'SX 300',
+    model: 'SX 300', // gen: SX 300 (2025), src: TW skips = Klipper tie-off 8B, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -466,7 +466,7 @@ const RACKETS = [
     beamMm: 21.5,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Pro Staff 97L v14',
+    model: 'Pro Staff 97L v15', // gen: Pro Staff 97L Classic v15 (2026), src: TW skips = v14 Wilson PDF (throat), inferred
     pattern: '16x19',
     headSize: 97,
     headWidth: 247, headLength: 317, shapeN: 2.36,
@@ -485,7 +485,7 @@ const RACKETS = [
     beamMm: 21.0,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Blade 98 v9',
+    model: 'Blade 98 v9', // gen: Blade v9 (current), src: Wilson v9 98 16x19 PDF "start mains at top"
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -504,7 +504,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Blade 100L v9',
+    model: 'Blade 100L v9', // gen: Blade v9 (current), src: Wilson v9 100L PDF "start mains at top"
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -523,7 +523,7 @@ const RACKETS = [
     beamMm: 22.5,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Blade 104 v9',
+    model: 'Blade 104 v9', // gen: Blade v9 (current), src: Wilson v9 104 PDF "start mains at top"
     pattern: '16x19',
     headSize: 104,
     headWidth: 256, headLength: 328, shapeN: 2.35,
@@ -542,7 +542,7 @@ const RACKETS = [
     beamMm: 24.0,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Clash 98 v2',
+    model: 'Clash 98 v2', // gen: Clash 98 v2 (no v3), src: Wilson v2 PDF tie-off 6H + v1 PDF + tenniscompanion; sheet's "throat" line is the error
     pattern: '16x20',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -561,7 +561,7 @@ const RACKETS = [
     beamMm: 24.0,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Clash 100 Pro v3',
+    model: 'Clash 100 Pro v3', // gen: Clash v3, src: Wilson v3 100 Pro PDF "start mains at throat"
     pattern: '16x20',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -580,7 +580,7 @@ const RACKETS = [
     beamMm: 24.5,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Clash 108 v3',
+    model: 'Clash 108 v3', // gen: Clash v3, src: Wilson v3 108 PDF "start mains at throat"
     pattern: '16x19',
     headSize: 108,
     headWidth: 260, headLength: 334, shapeN: 2.33,
@@ -599,7 +599,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 4,
     brand: 'Wilson',
-    model: 'Shift 99 v1',
+    model: 'Shift 99 v1', // gen: Shift v1 99/300 (current), src: Wilson PDF "start mains at top"
     pattern: '16x20',
     headSize: 99,
     headWidth: 250, headLength: 320, shapeN: 2.37,
@@ -618,7 +618,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Shift 99 Pro v1',
+    model: 'Shift 99 Pro v1', // gen: Shift v1 99/315 (current), src: Wilson PDF "start mains at bottom"
     pattern: '18x20',
     headSize: 99,
     headWidth: 250, headLength: 320, shapeN: 2.37,
@@ -637,7 +637,7 @@ const RACKETS = [
     beamMm: 26.5,
     throatPairs: 3,
     brand: 'Wilson',
-    model: 'Ultra 100UL v4',
+    model: 'Ultra 100UL v5', // gen: Ultra v5 (2025), src: Wilson Ultra v5 100UL PDF "start mains at throat"
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -656,7 +656,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Speed MP',
+    model: 'Speed MP', // gen: Speed 2026, src: TW skips = Klipper 2024 tie-off 8T, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -675,7 +675,7 @@ const RACKETS = [
     beamMm: 24.0,
     throatPairs: 3,
     brand: 'HEAD',
-    model: 'Boom MP',
+    model: 'Boom MP', // gen: Boom 2026, src: TW skips = string-log 2024 tie-off 8B, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -694,7 +694,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 3,
     brand: 'HEAD',
-    model: 'Boom Pro',
+    model: 'Boom Pro', // gen: Boom 2026, src: TW 16x19 skips = HEAD 2022 PDF "start at the bottom", inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -713,7 +713,7 @@ const RACKETS = [
     beamMm: 21.5,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Radical Pro',
+    model: 'Radical Pro', // gen: Radical 2025, src: TW skips = string-log 2023 tie-off 7T, inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -732,7 +732,7 @@ const RACKETS = [
     beamMm: 20.0,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Gravity Pro',
+    model: 'Gravity Pro', // gen: Gravity 2025, src: TW skips = HEAD 2021 PDF "start at the top", inferred
     pattern: '18x20',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -751,7 +751,7 @@ const RACKETS = [
     beamMm: 21.5,
     throatPairs: 4,
     brand: 'HEAD',
-    model: 'Prestige MP',
+    model: 'Prestige MP', // gen: Prestige 2023 (current), src: TW pattern; start end unconfirmed
     pattern: '18x19',
     headSize: 99,
     headWidth: 250, headLength: 320, shapeN: 2.37,
@@ -770,7 +770,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 3,
     brand: 'HEAD',
-    model: 'Extreme Pro',
+    model: 'Extreme Pro', // gen: Extreme 2026, src: TW skips 8T,8H = HEAD 2021 PDF "start at the bottom", inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -789,7 +789,7 @@ const RACKETS = [
     beamMm: 26.0,
     throatPairs: 3,
     brand: 'Babolat',
-    model: 'Pure Aero 100',
+    model: 'Pure Aero 100', // gen: Pure Aero 2026, src: TW skips = Klipper 2023 tie-off 7B, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -808,7 +808,7 @@ const RACKETS = [
     beamMm: 26.0,
     throatPairs: 3,
     brand: 'Babolat',
-    model: 'Pure Drive 107',
+    model: 'Pure Drive 107', // gen: Pure Drive 107 2025, src: TW skips; Klipper older-107 tie-off 6B, weak inference
     pattern: '16x19',
     headSize: 107,
     headWidth: 259, headLength: 333, shapeN: 2.33,
@@ -827,7 +827,7 @@ const RACKETS = [
     beamMm: 23.0,
     throatPairs: 4,
     brand: 'Babolat',
-    model: 'Pure Strike 100',
+    model: 'Pure Strike 100', // gen: Pure Strike 100 16x19 Gen4, src: string-log 2024 tie-off 7T; TW skips disagree, unconfirmed
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
@@ -846,7 +846,7 @@ const RACKETS = [
     beamMm: 26.5,
     throatPairs: 3,
     brand: 'Yonex',
-    model: 'EZONE 100',
+    model: 'EZONE 100', // gen: EZONE 2025 (8th), src: Yonex chart "Start @ Throat"
     pattern: '16x19',
     headSize: 100,
     headWidth: 252, headLength: 303, shapeN: 2.62, // isometric
@@ -865,7 +865,7 @@ const RACKETS = [
     beamMm: 23.5,
     throatPairs: 3,
     brand: 'Yonex',
-    model: 'VCORE 98',
+    model: 'VCORE 98', // gen: VCORE 8th gen 2026, src: TW skips = Yonex chart (7th gen) throat, inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 249, headLength: 300, shapeN: 2.60, // isometric
@@ -884,7 +884,7 @@ const RACKETS = [
     beamMm: 26.0,
     throatPairs: 3,
     brand: 'Yonex',
-    model: 'VCORE 100',
+    model: 'VCORE 100', // gen: VCORE 8th gen 2026, src: TW skips = Yonex chart (7th gen) throat, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 252, headLength: 303, shapeN: 2.62, // isometric
@@ -903,7 +903,7 @@ const RACKETS = [
     beamMm: 21.0,
     throatPairs: 4,
     brand: 'Yonex',
-    model: 'Percept 97',
+    model: 'Percept 97', // gen: Percept 2023, src: Yonex chart 97H "Start @ Head"; TW: same skips/grommet as 97H, inferred
     pattern: '16x19',
     headSize: 97,
     headWidth: 247, headLength: 299, shapeN: 2.60, // isometric
@@ -922,7 +922,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 4,
     brand: 'Yonex',
-    model: 'Percept 100',
+    model: 'Percept 100', // gen: Percept 2023, src: Yonex chart "Start @ Head"
     pattern: '16x19',
     headSize: 100,
     headWidth: 252, headLength: 303, shapeN: 2.62, // isometric
@@ -941,7 +941,7 @@ const RACKETS = [
     beamMm: 22.0,
     throatPairs: 4,
     brand: 'Tecnifibre',
-    model: 'TF40 305',
+    model: 'TF40 305', // gen: TF40 305 16M V3 (2024), src: TW skips = Klipper tie-off 6T, inferred
     pattern: '16x19',
     headSize: 98,
     headWidth: 248, headLength: 318, shapeN: 2.38,
@@ -960,7 +960,7 @@ const RACKETS = [
     beamMm: 22.5,
     throatPairs: 3,
     brand: 'Tecnifibre',
-    model: 'TFight 300 ISO',
+    model: 'TFight 300S', // gen: TFight 300S (2025) replaces ISO, src: Klipper tie-off 8B, inferred
     pattern: '16x19',
     headSize: 100,
     headWidth: 251, headLength: 322, shapeN: 2.36,
