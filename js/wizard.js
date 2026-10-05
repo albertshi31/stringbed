@@ -14,31 +14,25 @@ const Wizard = (function () {
      still sent on Start so the app's handler gets the fields it reads. */
   const STEPS = ['racket', 'machine', 'string', 'review'];
   const TITLES = {
-    racket:  'Which racket?',
+    racket:  'Your racket',
     machine: 'What are you stringing on?',
     string:  'What kind of string?',
     review:  'Check it over'
   };
 
-  const rk = () => RACKETS.find(r => r.id === draft.racketId);
+  const rk = () => makeFrame(draft);
   const sg = () => STRINGS.find(s => s.type === draft.kind) || STRINGS[0];
   /* Only the kind is asked. Synthetic gut is the one to learn on. */
   const KINDS = ['Synthetic gut', 'Multifilament', 'Polyester', 'Natural gut'];
   const mid = () => 55;   // a sensible middle tension for any frame
-  /* the same name the bench uses: no version suffix */
-  const modelName = racketName;
-  const label = r => `${modelName(r)} · ${r.pattern}`;
 
-  /* One group per brand, models sorted by name. Pattern and head size ride
-     along because two frames can share a name (a 16x19 and an 18x20). */
-  function racketOptions() {
-    const brands = [...new Set(RACKETS.map(r => r.brand))].sort();
-    return brands.map(b => `<optgroup label="${b}">${RACKETS
-      .filter(r => r.brand === b)
-      .sort((x, y) => label(x).localeCompare(label(y), undefined, { numeric: true }))
-      .map(x => `<option value="${x.id}" ${x.id === draft.racketId ? 'selected' : ''}>${label(x)}</option>`)
-      .join('')}</optgroup>`).join('');
-  }
+  /* A small segmented control, the same one the Your racket tab uses */
+  const seg = (name, label, opts) => `<div class="seg ${name === 'pattern' ? 'grid3' : 'sets-seg'}"
+      role="radiogroup" aria-label="${label}">${opts.map(o => {
+        const on = String(draft[name]) === String(o.v);
+        return `<button type="button" role="radio" class="${on ? 'on' : ''}" aria-checked="${on}"
+          data-set="${name}" data-val="${o.v}">${o.t}</button>`;
+      }).join('')}</div>`;
 
   /* ---------------- the panes ---------------- */
 
@@ -53,25 +47,19 @@ const Wizard = (function () {
   }
 
   const panes = {
-    racket: () => {
-      const r = rk();
-      return `
-        <label class="fld"><span>Frame</span>
-          <select id="wzRacket">${racketOptions()}</select></label>
-        <dl class="wz-facts">
-          <div><dt>Stock pattern</dt><dd>${r.pattern}</dd></div>
-          <div><dt>Throat holes</dt><dd>${r.throatPairs} sets</dd></div>
-        </dl>
-        <p class="hint">It is strung in its own stock pattern.</p>
-        <!-- A catalogue of a few dozen frames will not hold someone's actual racket, and
-             the failure mode is silent: they pick something that looks close
-             and trust its routing. Say what the app can and cannot tell
-             them, and invent nothing about a frame that is not in here. -->
-        <button type="button" class="btn ghost wz-unlisted" data-wz-unlisted
-          aria-expanded="${draft.unlisted ? 'true' : 'false'}">My racket isn't listed</button>
-        ${draft.unlisted ? `<p class="note wz-unlisted-note">
-          Pick any frame to learn the motions. For the real string path, follow your own frame's markings.</p>` : ''}`;
-    },
+    /* The three things read off the frame, on one screen */
+    racket: () => `
+        <div class="wz-q"><h4>String pattern</h4>
+          ${seg('pattern', 'String pattern', FRAME_PATTERNS.map(p => ({ v: p, t: p })))}
+          <p class="hint">Printed on the frame, usually inside the throat or on the shaft.</p></div>
+        <div class="wz-q"><h4>Hole sets at the throat</h4>
+          ${seg('throatPairs', 'Hole sets at the throat', [3, 4].map(n => ({ v: n, t: n + ' sets' })))}
+          <p class="hint">3 sets: the mains start at the throat. 4 sets: they start at the head.</p></div>
+        <div class="wz-q"><h4>Head size <em class="opt">Optional</em></h4>
+          <label class="fld"><span class="sr-only">Head size</span><select id="wzHead">
+            <option value="">Not sure (${DEFAULT_HEAD} sq in)</option>${HEAD_SIZES.map(h =>
+              `<option value="${h}" ${draft.headSize === h ? 'selected' : ''}>${h} sq in</option>`).join('')}
+          </select></label></div>`,
 
     machine: () => paneChoice('machineType', Job.MACHINES.map(m =>
       ({ v: m.id, t: m.name, d: m.clamp }))),
@@ -88,8 +76,7 @@ const Wizard = (function () {
       const strung = plane => `${s.name} · ${draft.gauge.toFixed(2)} mm · ${plane} lb`;
       return `
         <dl class="wz-facts wz-review">
-          <div><dt>Racket</dt><dd>${r.brand} ${modelName(r)}</dd></div>
-          <div><dt>Pattern</dt><dd>${bed.patternLabel} <em>(stock)</em></dd></div>
+          <div><dt>Racket</dt><dd>${bed.patternLabel} · mains start at the ${mainsStartOf(r.throatPairs)}</dd></div>
           <div><dt>Machine</dt><dd>${Job.machine(draft.machineType).name}</dd></div>
           <div><dt>Mains</dt><dd>${strung(draft.tMain)}</dd></div>
           <div><dt>Crosses</dt><dd>${strung(draft.tCross)}</dd></div>
@@ -129,14 +116,10 @@ const Wizard = (function () {
   }
 
   function handle(e) {
-    if (e.target.closest('[data-wz-unlisted]')) {
-      draft.unlisted = !draft.unlisted;
-      render();
-      return;
-    }
     const set = e.target.closest('[data-set]');
     if (set) {
-      draft[set.dataset.set] = set.dataset.val;
+      const k = set.dataset.set, v = set.dataset.val;
+      draft[k] = k === 'throatPairs' ? +v : v;
       applyRecommendation();
       render();
       return;
@@ -153,8 +136,8 @@ const Wizard = (function () {
   }
 
   function change(e) {
-    if (e.target.id === 'wzRacket') {
-      draft.racketId = e.target.value;
+    if (e.target.id === 'wzHead') {
+      draft.headSize = e.target.value ? +e.target.value : null;
       applyRecommendation();
       render();
     }
@@ -162,9 +145,10 @@ const Wizard = (function () {
 
   function open(mount, current, done, cancel) {
     host = mount; onDone = done; onCancel = cancel; stepIx = 0;
-    const r = RACKETS.find(x => x.id === current.racketId) || RACKETS[0];
+    const f = makeFrame(current);
     draft = {
-      purpose: 'practice', racketId: r.id, unlisted: false,
+      purpose: 'practice', pattern: f.pattern, throatPairs: f.throatPairs,
+      headSize: current.headSize || null,
       machineType: current.machineType || 'dropweight',
       kind: 'Synthetic gut', method: 'two'
     };

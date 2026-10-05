@@ -287,7 +287,7 @@ const RacketSVG = (function () {
        cross-browser answer for how big it is. Chrome infers it from the
        explicit drawImage dimensions; Firefox does not, and rasterises nothing.
        Two attributes make the exported file self-describing. */
-    p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])}" width="${f(vb[2])}" height="${f(vb[3])}" class="racket-svg${o.animate ? ' animating' : ''}" role="img" aria-label="${esc(r.brand + ' ' + racketName(r) + ' strung ' + bed.patternLabel)}">`);
+    p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])}" width="${f(vb[2])}" height="${f(vb[3])}" class="racket-svg${o.animate ? ' animating' : ''}" role="img" aria-label="${esc('Racket strung ' + bed.patternLabel)}">`);
 
     // ---------------- defs ----------------
     p.push('<defs>');
@@ -1146,11 +1146,6 @@ const RacketSVG = (function () {
     if (overlay) p.push(overlay);
 
     // ---------------- markings ----------------
-    if (!headOnly) {
-      p.push(`<text x="0" y="${f(shaftTop + 24)}" text-anchor="middle" font-size="${f(fz(8))}"
-        font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="0.8"
-        fill="${ink2}" fill-opacity="0.75">${esc(racketName(r).toUpperCase())}</text>`);
-    }
     // the stepped views have their own caption, and the badges live up here
     if (!beatView && !o.hideLabel) p.push(`<text class="pat-label" x="0" y="${f(REF_TOP + (RIG ? 12 : 14) + (fz(9.5) - 9.5) * 0.8)}" text-anchor="middle" font-size="${f(fz(9.5))}"
       font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="2.4"

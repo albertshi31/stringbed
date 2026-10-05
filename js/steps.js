@@ -1,6 +1,7 @@
 /* Builds the step-by-step stringing job for the current configuration.
  * Every number in here comes from the actual geometry of the selected
- * racket + pattern, so a 16x19 and an 18x20 give different instructions. */
+ * pattern, hole sets and head size the user entered, so a 16x19 and an
+ * 18x20 give different instructions. */
 const Steps = (function () {
 
   /* the article lives in Fmt now, so the guide and the wizard agree */
@@ -219,8 +220,7 @@ const Steps = (function () {
         specs: [['Position', `head at 12 o'clock`],
                 ['Contact', 'frame only']],
         actions: [
-          `Put the ${racket.brand} ${racketName(racket)} in the mount with the
-           <b>head at 12 o'clock</b>.`,
+          `Put the racket in the mount with the <b>head at 12 o'clock</b>.`,
           `Tighten the supports. Make sure the frame is stable and does not rock.`
         ],
         watch: `Be careful not to overtighten.`,
@@ -297,16 +297,18 @@ const Steps = (function () {
 
 
     steps.push({
-      id: 'throat', stage: 'empty', title: 'Read the throat: 3 sets or 4?',
+      id: 'throat', stage: 'empty', title: `Check the throat: ${throatPairs} sets`,
       body: layout({
         specs: [['Hole sets', throatPairs], ['Mains start', pl.mainsStart],
                 ['Mains finish', pl.mainsEnd]],
         actions: [
-          `Just above the ${g('throat')}, count the <b>sets of main holes</b>. A set is one pair of holes,
-           one on each side of the center line.`,
-          `<b>3 sets</b>: the mains start at the throat. <b>4 sets</b>: they start at the head.`,
-          `This racket has <b>${throatPairs} sets</b>, so the mains start at the
-           <b>${pl.mainsStart}</b> and finish at the <b>${pl.mainsEnd}</b>.`
+          `Just above the ${g('throat')}, count the <b>sets of main holes</b> again. A set is one pair of
+           holes, one on each side of the center line.`,
+          `You said <b>${throatPairs} sets</b>, so the mains start at the <b>${pl.mainsStart}</b> and
+           finish at the <b>${pl.mainsEnd}</b>.`,
+          `Counted ${throatPairs === 3 ? 4 : 3} instead? Change it on the
+           <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="racket">Your racket</button></span>
+           tab before you thread anything.`
         ],
         watch: `If the count is not obvious, most frames print the pattern and the tie-off holes inside the
           throat.`,
@@ -370,7 +372,7 @@ const Steps = (function () {
                 ['Tension', `${tMain} lb`], ['Tie off at', pl.mainsEnd]],
         actions: [
           `<b>Thread.</b> Take the string around the outside of the frame and through the next main hole.
-           Skip any hole this racket reserves for the crosses.`,
+           Skip any hole your frame keeps for the crosses.`,
           `<b>Tension.</b> Pull that main to ${tMain} lb.`,
           `<b>Clamp.</b> Clamp it close to the ${g('grommet')}, without touching the frame. Only let the
            machine go once the clamp is on and holding the tension.`,

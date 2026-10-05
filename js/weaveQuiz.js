@@ -20,7 +20,14 @@ const WeaveQuiz = (function () {
   const ROUNDS = 5;
 
   const CLOSE = { n: N, x0: X0, dx: DX, wm: 6, wc: 7, r: 15 };
+  /* every main of the job's own frame, across the same width whatever the count */
   const WHOLE = { n: 16, x0: 100, dx: 20.2, wm: 4, wc: 5, r: 10 };
+  const SPAN = 15 * 20.2;
+  function setMains(n) {
+    M = n === 18 ? 18 : 16;
+    WHOLE.n = M; WHOLE.dx = SPAN / (M - 1);
+    RULE = `With ${M} mains, a cross that starts <b>under</b> the first main finishes <b>over</b> the last one, and vice versa.`;
+  }
   let L = CLOSE;                       // the layout being drawn
   const mx = i => L.x0 + i * L.dx;
   const flip = w => (w === 'over' ? 'under' : 'over');
@@ -128,8 +135,9 @@ const WeaveQuiz = (function () {
   }
 
   /* ---- the whole cross: how it starts decides how it finishes ---------- */
-  const M = 16;                                       // a 16-main frame, every main drawn
-  const RULE = `With ${M} mains, a cross that starts <b>under</b> the first main finishes <b>over</b> the last one, and vice versa.`;
+  /* the job's mains count, set when the quiz opens: 16 or 18, both even */
+  let M = 16, RULE = '';
+  setMains(16);
 
   function qEnds() {
     const start = pick(['over', 'under']);
@@ -176,7 +184,8 @@ const WeaveQuiz = (function () {
     return h;
   }
 
-  function open() {
+  function open(opts) {
+    setMains(opts && opts.mains);
     const host = hostEl();
     const restore = document.activeElement;
     // every kind at least once, then fill the round at random

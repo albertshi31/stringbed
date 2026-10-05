@@ -14,8 +14,35 @@ const Job = (function () {
   const STORE = 'stringbed.v2';
   const LEGACY = 'stringbed.v1';
   /* 3: the String tab lost its String card, so the deck went from four cards
-     to three and a saved card index means something different. */
-  const VERSION = 4;
+     to three and a saved card index means something different.
+     4: the guide went from nine steps to eight.
+     5: the racket list went. A save names a pattern, hole sets and head size
+     instead of a racket id. */
+  const VERSION = 5;
+
+  /* What every frame in the old racket list was, as [pattern, throat sets,
+     head size]. Kept only so a save from before version 5 comes back as the
+     same job. An id not in here comes back as 16x19, 3 sets, 98. */
+  const OLD_RACKETS = {
+    ps97: ['16x19', 3, 97], blade98: ['18x20', 4, 98], puredrive: ['16x19', 3, 100],
+    pureaero: ['16x20', 3, 98], radicalmp: ['16x19', 4, 98], speedpro: ['18x20', 4, 100],
+    ezone98: ['16x19', 3, 98], vcore95: ['16x20', 3, 95], phantom100p: ['18x20', 4, 100],
+    tf40: ['18x20', 4, 98], cx200: ['16x19', 3, 98], blackout300: ['16x19', 3, 100],
+    prestige: ['18x20', 4, 98], clash100: ['16x19', 3, 100], pog107: ['16x19', 3, 107],
+    ultra100: ['16x19', 3, 100], purestrike: ['16x19', 4, 98], gravity: ['16x20', 3, 100],
+    extreme: ['16x19', 3, 100], tfight305: ['18x19', 4, 98], whiteout: ['16x19', 3, 98],
+    fx500: ['16x19', 3, 100], sx300: ['16x19', 3, 100], ps97l: ['16x19', 3, 97],
+    blade98s: ['16x19', 4, 98], blade100l: ['16x19', 4, 100], blade104: ['16x19', 4, 104],
+    clash98: ['16x20', 4, 98], clash100pro: ['16x20', 3, 100], clash108: ['16x19', 3, 108],
+    shift99: ['16x20', 4, 99], shift99pro: ['18x20', 3, 99], ultra100ul: ['16x19', 3, 100],
+    speedmp: ['16x19', 4, 100], boommp: ['16x19', 3, 100], boompro: ['16x19', 3, 98],
+    radicalpro: ['16x19', 4, 98], gravitypro: ['18x20', 4, 100], prestigemp: ['18x19', 4, 99],
+    extremepro: ['16x19', 3, 98], pureaero100: ['16x19', 3, 100], puredrive107: ['16x19', 3, 107],
+    purestrike100: ['16x19', 4, 100], ezone100: ['16x19', 3, 100], vcore98: ['16x19', 3, 98],
+    vcore100: ['16x19', 3, 100], percept97: ['16x19', 4, 97], percept100: ['16x19', 4, 100],
+    tf40s: ['16x19', 4, 98], tfight300: ['16x19', 3, 100]
+  };
+  const OLD_FALLBACK = ['16x19', 3, 98];
 
   /* ---------------- machines ---------------- */
   /* ONE SOURCE OF TRUTH for every machine fact in the app. The setup guide, the
@@ -108,27 +135,27 @@ const Job = (function () {
   const purpose = id => PURPOSES.find(p => p.id === id) || PURPOSES[0];
 
   /* ---------------- curated examples ---------------- */
-  /* Four setups that each show ONE idea, built only from frames and strings
-     already in the catalogue. `short` is a single line because it is read in a
+  /* Four setups that each show ONE idea, built only from patterns and strings
+     the app offers. `short` is a single line because it is read in a
      dropdown -- anything longer turns the menu into something you scroll.
      They are illustrations of a trade-off, not recommendations: what suits a
      given player is not something this app can know. */
   const EXAMPLES = [
     { id: 'practice', name: 'Beginner practice',
       short: 'Cheap and forgiving, for learning',
-      set: { racketId: 'clash100', mainId: 'syngut', crossId: 'syngut', mainGauge: 1.30, crossGauge: 1.30,
+      set: { pattern: '16x19', throatPairs: 3, headSize: 100, mainId: 'syngut', crossId: 'syngut', mainGauge: 1.30, crossGauge: 1.30,
              tMain: 55, tCross: 55, method: 'two', linkCross: true } },
     { id: 'comfort', name: 'Comfort',
       short: 'Soft multi, low in the range',
-      set: { racketId: 'ezone98', mainId: 'multi', crossId: 'multi', mainGauge: 1.30, crossGauge: 1.30,
+      set: { pattern: '16x19', throatPairs: 3, headSize: 98, mainId: 'multi', crossId: 'multi', mainGauge: 1.30, crossGauge: 1.30,
              tMain: 48, tCross: 46, method: 'two', linkCross: true } },
     { id: 'control', name: 'Control',
       short: 'Dense 18x20, stiff poly, high tension',
-      set: { racketId: 'blade98', mainId: 'poly', crossId: 'poly', mainGauge: 1.25, crossGauge: 1.25,
+      set: { pattern: '18x20', throatPairs: 4, headSize: 98, mainId: 'poly', crossId: 'poly', mainGauge: 1.25, crossGauge: 1.25,
              tMain: 58, tCross: 56, method: 'two', linkCross: true } },
     { id: 'durability', name: 'Durability',
       short: 'Hybrid with poly mains',
-      set: { racketId: 'purestrike', mainId: 'poly', crossId: 'syngut', mainGauge: 1.25, crossGauge: 1.30,
+      set: { pattern: '16x19', throatPairs: 4, headSize: 98, mainId: 'poly', crossId: 'syngut', mainGauge: 1.25, crossGauge: 1.30,
              tMain: 52, tCross: 54, method: 'two', linkCross: false } }
   ];
 
@@ -228,12 +255,11 @@ const Job = (function () {
 
   /* ---------------- persistence ---------------- */
   /* Versioned, and every field is checked on the way back in. A saved value
-     that no longer makes sense -- a racket that left the catalogue, a pattern
-     that was removed, a hand-edited number -- is dropped, never trusted, and
+     that no longer makes sense -- a pattern that was removed, a hand-edited number -- is dropped, never trusted, and
      never allowed to stop the page loading. */
-  const SAVED = ['v', 'tab', 'sub', 'knot', 'primerDone', 'card', 'sideCard', 'seenStart', 'mode', 'machineType', 'jobStatus',
+  const SAVED = ['v', 'tab', 'sub', 'knot', 'primerDone', 'card', 'rCard', 'sideCard', 'seenStart', 'mode', 'machineType', 'jobStatus',
                  'purpose', 'kind', 'crossKind',
-                 'racketId', 'pattern', 'mainId', 'crossId',
+                 'pattern', 'throatPairs', 'headSize', 'mainId', 'crossId',
                  'mainGauge', 'crossGauge', 'tMain', 'tCross', 'linkCross', 'linkTension', 'method',
                  'step', 'stepOpen', 'checked'];
 
@@ -263,15 +289,24 @@ const Job = (function () {
     let o;
     try { o = readRaw(); } catch (e) { return state; }
     if (!o) return state;
-    const { rackets, strings, patterns, gauges } = catalogue;
+    const { strings, patterns, headSizes, gauges } = catalogue;
     const take = (k, ok) => { if (ok(o[k])) state[k] = o[k]; };
 
-    // a frame merged into another under one name comes back as the one kept
-    if (typeof RACKET_ALIASES !== 'undefined' && RACKET_ALIASES[o.racketId]) o.racketId = RACKET_ALIASES[o.racketId];
-    take('racketId', v => rackets.some(r => r.id === v));
+    /* Before version 5 a save named a racket from the list, and its pattern
+       was 'stock'. The racket's own pattern, hole sets and head size take its
+       place, so an old job comes back strung the same way. */
+    if (!(o.v >= 5)) {
+      delete o.pattern; delete o.throatPairs; delete o.headSize;
+      if (typeof o.racketId === 'string') {
+        const f = OLD_RACKETS[o.racketId] || OLD_FALLBACK;
+        o.pattern = f[0]; o.throatPairs = f[1]; o.headSize = f[2];
+      }
+    }
+    take('pattern',     v => patterns.includes(v));
+    take('throatPairs', v => v === 3 || v === 4);
+    take('headSize',    v => v === null || (headSizes || []).includes(v));
     take('mainId',   v => strings.some(s => s.id === v));
     take('crossId',  v => strings.some(s => s.id === v));
-    take('pattern',  v => v === 'stock' || patterns.includes(v));
     take('mainGauge',  v => gauges.includes(v));
     take('crossGauge', v => gauges.includes(v));
     take('step', v => Number.isFinite(v) && v >= 0);
@@ -293,6 +328,7 @@ const Job = (function () {
     const oldDeck = !(o.v >= 3);
     take('card', v => Number.isInteger(v) && v >= 0 && v <= (oldDeck ? 3 : 2));
     if (oldDeck && Number.isInteger(state.card)) state.card = [0, 1, 1, 2][state.card];
+    take('rCard', v => Number.isInteger(v) && v >= 0 && v <= 2);
     take('mode', v => v === 'real' || v === 'sandbox');
     take('machineType', v => MACHINES.some(m => m.id === v));
     take('jobStatus', v => ['setup', 'active', 'complete'].includes(v));
@@ -317,10 +353,6 @@ const Job = (function () {
       });
       state.checked = c;
     }
-    /* A sandbox pattern must never survive into real-racket mode: the frame is
-       not drilled for it, and a stale override is exactly the kind of thing a
-       returning user would not think to check. */
-    if (state.mode === 'real') state.pattern = 'stock';
     return state;
   }
 
@@ -328,7 +360,7 @@ const Job = (function () {
     try { localStorage.removeItem(STORE); localStorage.removeItem(LEGACY); } catch (e) { /* ignore */ }
   }
 
-  return { STORE, LEGACY, VERSION, MACHINES, MACHINE_NOTE, machine, MODES, PURPOSES, purpose,
+  return { STORE, LEGACY, VERSION, OLD_RACKETS, MACHINES, MACHINE_NOTE, machine, MODES, PURPOSES, purpose,
            EXAMPLES, TERMS, MACHINE_TERMS, hadSaved,
            progress, hasProgress, hasChecks, save, load, clear };
 })();

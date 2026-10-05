@@ -29,7 +29,3 @@ const STRINGS = [
 STRINGS.forEach(s => { s.color = s.colors[0].hex; });
 
 const GAUGES = [1.15, 1.20, 1.25, 1.30, 1.35];
-
-/* The patterns the app offers. Every racket's own stock pattern is one of
-   these, so the dropdown never grows a fifth entry for a particular frame. */
-const PATTERNS = ['16x19', '16x20', '18x19', '18x20'];

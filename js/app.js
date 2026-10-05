@@ -13,52 +13,25 @@
   const all = s => [...document.querySelectorAll(s)];
 
   const state = {
-    racketId: 'ps97',
+    // the frame in the user's hands: read off it, never looked up
+    pattern: '16x19', throatPairs: 3, headSize: null,
     mainId: 'syngut', crossId: 'syngut',
     mainGauge: null, crossGauge: null,
     tMain: 55, tCross: 55,
     linkCross: true, linkTension: true, crossKind: 'Synthetic gut',
     method: 'two', machineType: 'dropweight',
     kind: 'Synthetic gut',
-    step: 0, stepOpen: true, startBeat: 1, stringStep: 0, card: 0,
+    step: 0, stepOpen: true, startBeat: 1, stringStep: 0, card: 0, rCard: 0,
     tab: 'racket', sub: 'words', knot: 'finish', primerDone: false, checked: {},
     seenStart: false, jobStatus: 'setup', purpose: 'practice',
-    mode: 'real', pattern: 'stock', sideCard: 'racket'
+    mode: 'real', sideCard: 'racket'
   };
   const DEFAULTS = JSON.parse(JSON.stringify(state));
 
-  /* ---------------- catalogue helpers ---------------- */
-
-  /* Model names carry no version suffix on screen: a first-timer looking at a
-     Pro Staff does not need to know it is a v14, and the suffix is the longest
-     part of the label in a dropdown. */
-  const VARIANT = /^(MP|Pro|Tour|ISO|XTD|LS?|P)$/i;
-  function splitModel(r) {
-    const name = racketName(r);
-    const toks = name.split(/\s+/);
-    /* The family is everything before the first size or variant token. The
-       first token is always family, or "Pro Staff" would file under "Pro". */
-    let i = 1;
-    while (i < toks.length && !/^\d/.test(toks[i]) && !VARIANT.test(toks[i])) i++;
-    return { name: name, family: toks.slice(0, i).join(' '), variant: toks.slice(i).join(' ') };
-  }
-  const modelName = r => splitModel(r).name;
-  const BRANDS = [...new Set(RACKETS.map(r => r.brand))].sort();
-
-  /* Families alphabetical, models within a family by head size. */
-  function familiesOf(brand) {
-    const fam = {};
-    RACKETS.filter(r => r.brand === brand).forEach(r => {
-      const f = splitModel(r).family;
-      (fam[f] = fam[f] || []).push(r);
-    });
-    return Object.keys(fam).sort().map(f => ({
-      family: f, models: fam[f].slice().sort((a, b) => a.headSize - b.headSize)
-    }));
-  }
-
-  const racket = () => RACKETS.find(r => r.id === state.racketId) || RACKETS[0];
-  const brandOf = () => racket().brand;
+  /* ---------------- the frame ---------------- */
+  /* No list to look a racket up in: the frame is built from what the user read
+     off their own (frame.js). */
+  const racket = () => makeFrame(state);
   const str = id => STRINGS.find(s => s.id === id) || STRINGS[0];
   const mainHex = () => str(state.mainId).color;
   const crossHex = () => str(state.crossId).color;
@@ -84,17 +57,6 @@
     const v = h.replace('#', '');
     const n = v.length === 3 ? v.split('').map(c => c + c).join('') : v;
     return [0, 2, 4].map(i => parseInt(n.substr(i, 2), 16));
-  }
-  const lumOf = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
-  const hex2 = c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
-  function readableOnDark(hex) {
-    const c = rgb(hex);
-    if (lumOf(c) >= 0.62) return hex;
-    for (let k = 0.05; k < 1; k += 0.05) {
-      const m = c.map(v => v + (255 - v) * k);
-      if (lumOf(m) >= 0.62) return hex2(m);
-    }
-    return '#e9eef5';
   }
   /* light outline for a dark string, dark outline for a light one */
   function strEdge(hex) {
@@ -240,11 +202,11 @@
   /* ---------------- the job key ---------------- */
   /* The identity of the JOB — what the ticked checks belong to. */
   function configKey(s) {
-    const r = RACKETS.find(x => x.id === s.racketId) || RACKETS[0];
+    const f = makeFrame(s);
     const gM = s.mainGauge || 0, gC = s.crossGauge || 0;
-    return [r.id, r.pattern, s.method, s.mainId, s.crossId, s.tMain, s.tCross, gM, gC].join('|');
+    return [f.pattern, f.throatPairs, f.headSize, s.method, s.mainId, s.crossId, s.tMain, s.tCross, gM, gC].join('|');
   }
-  const KEY_FIELDS = ['racketId', 'method', 'mainId', 'crossId', 'tMain', 'tCross',
+  const KEY_FIELDS = ['pattern', 'throatPairs', 'headSize', 'method', 'mainId', 'crossId', 'tMain', 'tCross',
                       'mainGauge', 'crossGauge', 'linkCross', 'linkTension', 'kind', 'crossKind'];
 
   /* Changing the frame, string, tension, gauge or method starts a DIFFERENT
@@ -275,7 +237,7 @@
   function renderSpec(c) {
     const cut = Fmt.cutFor(c.stats, state.method === 'one');
     el('specStrip').innerHTML = [
-      ['Frame', modelName(c.r)],
+      ['Racket', frameLabel(c.r)],
       ['String', stringWords(c.sM, c.sC, c.gM)],
       ['Tension', state.tMain === state.tCross ? state.tMain + ' lb'
           : state.tMain + ' / ' + state.tCross + ' lb'],
@@ -298,33 +260,52 @@
     return host;
   }
 
+  /* Three things read off the frame: the pattern, the hole sets at the throat
+     and, if known, the head size. */
+  const HEAD_NOT_SURE = `Not sure (${DEFAULT_HEAD} sq in)`;
   function renderRacket(c) {
-    fillSeg('brandSeg', BRANDS.map(b => ({ v: b, t: b })), 'brand');
-    markSeg('brandSeg', 'brand', brandOf());
-
-    /* The model list only changes when the brand does, and rebuilding it while
-       the select has focus closes the open dropdown under the pointer. */
-    if (el('selModel').dataset.brand !== brandOf()) {
-      const fams = familiesOf(brandOf());
-      /* Group by family only where a family actually has more than one frame.
-         A list of one-frame groups is a heading above every line, which reads
-         as twice the list it is -- and it prints the family name twice, once as
-         the label and once inside the model it labels. */
-      const opt = (r, label) =>
-        `<option value="${r.id}">${label} · ${r.pattern}</option>`;
-      // only a family with more than one frame gets a heading
-      el('selModel').innerHTML = fams.map(g => g.models.length > 1
-          ? `<optgroup label="${g.family}">` + g.models.map(r => opt(r, modelName(r))).join('') + '</optgroup>'
-          : g.models.map(r => opt(r, modelName(r))).join('')).join('');
-      el('selModel').dataset.brand = brandOf();
-    }
-    el('selModel').value = state.racketId;
-
-    const pl = planFor(c);
+    fillSeg('patternSeg', FRAME_PATTERNS.map(p => ({ v: p, t: p })), 'pattern');
+    markSeg('patternSeg', 'pattern', c.r.pattern);
+    fillSeg('setsSeg', [3, 4].map(n => ({ v: String(n), t: n + ' sets' })), 'sets');
+    markSeg('setsSeg', 'sets', String(c.r.throatPairs));
+    const head = el('selHead');
+    if (!head.options.length)
+      head.innerHTML = `<option value="">${HEAD_NOT_SURE}</option>`
+        + HEAD_SIZES.map(h => `<option value="${h}">${h} sq in</option>`).join('');
+    head.value = state.headSize ? String(state.headSize) : '';
+    renderRDeck(c);
 
     paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
       Object.assign({ noKnots: true }, fit))));
     // the summary strip already gives the cut length: no fact boxes here
+  }
+
+  /* The racket tab is a deck too, the same shape as the string tab: one answer
+     at a time, the rail above saying what each one is set to. */
+  const R_CARDS = ['Pattern', 'Hole sets', 'Head size'];
+  const rCardEls = () => all('#tab-racket .rcard');
+  function rCardSummary(c, i) {
+    if (i === 0) return c.r.pattern;
+    if (i === 1) return c.r.throatPairs + ' sets';
+    return state.headSize ? state.headSize + ' sq in' : 'Not sure';
+  }
+  function renderRDeck(c) {
+    el('rDeckNav').innerHTML = R_CARDS.map((t, i) =>
+      `<button type="button" class="deck-tab ${i === state.rCard ? 'on' : ''}" role="tab"
+        aria-selected="${i === state.rCard}" tabindex="${i === state.rCard ? 0 : -1}" data-rcard="${i}">
+        <span class="deck-n">${i + 1}</span>
+        <span class="deck-t"><b>${t}</b><em>${rCardSummary(c, i)}</em></span>
+      </button>`).join('');
+    rCardEls().forEach((p, i) => { p.hidden = i !== state.rCard; });
+    el('rDeckPrev').disabled = state.rCard === 0;
+    el('rDeckNext').textContent = state.rCard === R_CARDS.length - 1 ? 'Next: choose a string' : 'Next';
+  }
+  /* past the last card is the string tab, as on the string deck */
+  function goRCard(i) {
+    if (i >= R_CARDS.length) { showTab('string'); return; }
+    state.rCard = Math.max(0, Math.min(R_CARDS.length - 1, i));
+    renderRDeck(cache || compute());
+    save();
   }
 
   /* ---------------- 2 · string ---------------- */
@@ -843,7 +824,7 @@
     if (!on) return;
     backTab = state.tab === 'learn' ? backTab : state.tab;
     b.textContent = backTab === 'do' ? `\u2190 Back to step ${state.step + 1}`
-      : `\u2190 Back to ${{ racket: 'Racket', string: 'String' }[backTab] || 'where you were'}`;
+      : `\u2190 Back to ${{ racket: 'Your racket', string: 'String' }[backTab] || 'where you were'}`;
   }
   function showTab(name, keepScroll) {
     if (['racket', 'string', 'do', 'learn'].indexOf(name) < 0) name = 'racket';
@@ -921,7 +902,7 @@
     a.href = URL.createObjectURL(blob); a.download = name; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
-  const fileBase = () => (cache.r.brand + '-' + modelName(cache.r) + '-' + cache.bed.patternLabel
+  const fileBase = () => (cache.bed.patternLabel + '-' + cache.r.throatPairs + '-sets'
       + '-' + stringWords(cache.sM, cache.sC, cache.gM) + '-' + state.tMain + (state.tCross !== state.tMain ? '-' + state.tCross : '') + 'lb')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const exportSvg = () => RacketSVG.render(svgOpts(cache, 'done', false, 'full'));
@@ -1110,7 +1091,9 @@
     if (Job.hasChecks(state) && !confirm('Start a new job? Your ticked checks will be cleared.')) return;
     state.purpose = Job.purpose(d.purpose).id;
     heldCross = null;
-    state.racketId = d.racketId;
+    state.pattern = d.pattern;
+    state.throatPairs = d.throatPairs;
+    state.headSize = d.headSize;
     state.machineType = d.machineType;
     state.method = d.method;
     state.kind = state.crossKind = KINDS.indexOf(d.kind) < 0 ? 'Synthetic gut' : d.kind;
@@ -1333,7 +1316,7 @@
         if (to === 'throat') { openThroat(); return; }
         if (to === 'grommets') { Holes.open('grommets'); return; }
         if (to === 'starthole') { Holes.open('start'); return; }
-        if (to === 'weavequiz') { WeaveQuiz.open(); return; }
+        if (to === 'weavequiz') { WeaveQuiz.open({ mains: cache.bed.mains.length }); return; }
         // leaving the guide for a lesson: offer the way back to the same step
         if (state.tab !== 'learn' && (to === 'tension' || to === 'knot' || to === 'words')) showBack(true);
         if (to === 'words') { openLearn('words', 'tab-learn'); return; }
@@ -1351,16 +1334,36 @@
     // the setup guide opens straight away; there is no menu in front of it
     el('btnSetup').addEventListener('click', () => { startOpener = document.activeElement; openWizard(); });
 
-    /* ---- 1 · racket ---- */
-    el('brandSeg').addEventListener('click', e => {
-      const b = e.target.closest('[data-brand]'); if (!b) return;
-      const first = familiesOf(b.dataset.brand)[0].models[0];
-      if (!guardConfig(() => { state.racketId = first.id; })) { render(false); return; }
+    /* ---- 1 · your racket ---- */
+    const setFrame = apply => {
+      if (!guardConfig(apply)) { render(false); return false; }
       render(false); mountKnots();
+      return true;
+    };
+    el('rDeckNav').addEventListener('click', e => {
+      const b = e.target.closest('[data-rcard]'); if (b) goRCard(+b.dataset.rcard);
     });
-    el('selModel').addEventListener('change', e => {
-      if (!guardConfig(() => { state.racketId = e.target.value; })) { render(false); return; }
-      render(false); mountKnots();
+    el('rDeckNav').addEventListener('keydown', e => {
+      const tabs = all('#rDeckNav .deck-tab'), i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      const go = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (go === undefined) return;
+      e.preventDefault();
+      goRCard(Math.max(0, Math.min(tabs.length - 1, go)));
+      all('#rDeckNav .deck-tab')[state.rCard].focus();
+    });
+    el('rDeckPrev').addEventListener('click', () => goRCard(state.rCard - 1));
+    el('rDeckNext').addEventListener('click', () => goRCard(state.rCard + 1));
+    el('patternSeg').addEventListener('click', e => {
+      const b = e.target.closest('[data-pattern]'); if (!b) return;
+      setFrame(() => { state.pattern = b.dataset.pattern; });
+    });
+    el('setsSeg').addEventListener('click', e => {
+      const b = e.target.closest('[data-sets]'); if (!b) return;
+      setFrame(() => { state.throatPairs = +b.dataset.sets; });
+    });
+    el('selHead').addEventListener('change', e => {
+      setFrame(() => { state.headSize = e.target.value ? +e.target.value : null; });
     });
 
     /* ---- 2 · string ---- */
@@ -1594,6 +1597,12 @@
   function openThroat() {
     Throat.open({
       racket: cache.r, bed: cache.bed, throatPairs: cache.throatPairs, method: state.method,
+      /* the count can be confirmed or changed from inside the pop-up */
+      onPick: n => {
+        if (n === cache.throatPairs) return;
+        if (!guardConfig(() => { state.throatPairs = n; })) { render(false); return; }
+        render(false); mountKnots(); openThroat();
+      },
       headSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'head'),
         { highlightYoke: true, markThroatPairs: cache.throatPairs, hideLabel: true, knots: [] })),
       depthSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'head'),
@@ -1640,7 +1649,7 @@
   /* ---------------- persistence ---------------- */
   function save() { Job.save(state); }
   function restore() {
-    const o = Job.load(DEFAULTS, { rackets: RACKETS, strings: STRINGS, patterns: PATTERNS, gauges: GAUGES });
+    const o = Job.load(DEFAULTS, { strings: STRINGS, patterns: FRAME_PATTERNS, headSizes: HEAD_SIZES, gauges: GAUGES });
     Object.keys(o).forEach(k => (state[k] = o[k]));
     /* The saved KIND is what counts. Older saves named a particular string
        ('alu', 'nxt' and so on) that is no longer in the catalogue, so the
@@ -1653,7 +1662,6 @@
   }
 
   /* ---------------- boot ---------------- */
-  RACKETS.forEach(r => { r.theme.accent2 = readableOnDark(r.theme.accent2); });
   restore();
   bind();
   initTooltip();

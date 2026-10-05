@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stringbed: learn to string a tennis racket</title>
-<meta name="description" content="Learn to string a tennis racket step by step. Pick your frame and string, then follow a guide drawn for your exact setup.">
+<meta name="description" content="Learn to string a tennis racket step by step. Enter your string pattern, pick a string, then follow a guide drawn for your exact setup.">
 <meta name="theme-color" content="#0b0e12">
 <meta property="og:title" content="Stringbed: learn to string a tennis racket">
 <meta property="og:description" content="A step by step stringing guide drawn for your racket, string and machine.">
@@ -22,8 +22,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=102">
-<link rel="stylesheet" href="tension.css?v=102">
+<link rel="stylesheet" href="styles.css?v=104">
+<link rel="stylesheet" href="tension.css?v=104">
 </head>
 <body>
 <div class="app" id="app">
@@ -37,7 +37,7 @@
 
     <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
       <button class="tab on" data-tab="racket" role="tab" id="tab-btn-racket"
-        aria-controls="tab-racket" aria-selected="true"><b>1</b>Racket</button>
+        aria-controls="tab-racket" aria-selected="true"><b>1</b>Your racket</button>
       <button class="tab" data-tab="string" role="tab" id="tab-btn-string"
         aria-controls="tab-string" aria-selected="false" tabindex="-1"><b>2</b>String</button>
       <button class="tab" data-tab="do" role="tab" id="tab-btn-do"
@@ -47,6 +47,7 @@
     </nav>
 
     <div class="top-actions">
+      <a class="top-link" href="about.html">About</a>
       <button type="button" class="btn ghost" id="btnSetup">Setup guide</button>
     </div>
   </header>
@@ -61,24 +62,41 @@
       <div class="layout">
         <div class="controls">
           <header class="screen-h">
-            <h1>Which racket?</h1>
+            <h1>Your racket</h1>
             <p>A free step-by-step guide to stringing your first racket.
-            Your racket decides the string pattern, the tension range, and which end you start from.</p>
+            Read these off your own frame. They decide how it is strung.</p>
           </header>
 
-          <section class="fieldset">
-            <h2><i>1</i>Brand</h2>
-            <div class="seg grid4" id="brandSeg" role="radiogroup" aria-label="Brand"></div>
+          <nav class="deck-nav" id="rDeckNav" role="tablist" aria-label="Your racket"></nav>
+
+          <section class="fieldset card rcard" hidden>
+            <h2>String pattern</h2>
+            <div class="seg grid3" id="patternSeg" role="radiogroup" aria-label="String pattern"></div>
+            <p class="help">It's printed on the frame, usually inside the throat or on the shaft.</p>
           </section>
 
-          <section class="fieldset">
-            <h2><i>2</i>Model</h2>
-            <label class="field"><span class="sr-only">Model</span>
-              <select id="selModel"></select></label>
+          <section class="fieldset card rcard" hidden>
+            <h2>Hole sets at the throat</h2>
+            <div class="seg sets-seg" id="setsSeg" role="radiogroup" aria-label="Hole sets at the throat"></div>
+            <p class="help">Count the sets of main holes just above the throat.</p>
+            <p class="help sets-rule"><b>3 sets:</b> the mains start at the throat. <b>4 sets:</b> they start at the head.</p>
+            <button type="button" class="btn count-btn" data-goto="throat">
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 12.5 L8 3.5 L14 12.5" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="5.2" cy="11" r="1.1" fill="currentColor"/>
+                <circle cx="8" cy="11" r="1.1" fill="currentColor"/><circle cx="10.8" cy="11" r="1.1" fill="currentColor"/></svg>
+              Show me how to count</button>
           </section>
 
-          <div class="cta-row">
-            <button type="button" class="btn primary" data-goto="string">Next: choose a string</button>
+          <section class="fieldset card rcard" hidden>
+            <h2>Head size <em class="opt">Optional</em></h2>
+            <label class="field head-field"><span class="sr-only">Head size</span>
+              <select id="selHead"></select></label>
+            <p class="help">Only the drawing and the string length follow it.</p>
+          </section>
+
+          <div class="deck-foot">
+            <button type="button" class="btn ghost" id="rDeckPrev">Back</button>
+            <button type="button" class="btn primary" id="rDeckNext">Next</button>
           </div>
         </div>
 
@@ -442,7 +460,8 @@
   <footer class="foot">
     <span>Stringbed is a learning guide. Tension and stiffness numbers are estimates, not lab
     measurements. Check the tie-off and skipped holes on your own frame.</span>
-    <a href="https://github.com/albertshi31/stringbed/issues" target="_blank" rel="noopener">Feedback</a>
+    <span class="foot-links"><a href="about.html">About</a>
+    <a href="https://github.com/albertshi31/stringbed/issues" target="_blank" rel="noopener">Feedback</a></span>
   </footer>
 
   <!-- first-run entry -->
@@ -475,20 +494,20 @@
   <div class="modal" id="throatModal"></div>
 </div>
 
-<script src="js/fmt.js?v=102"></script>
-<script src="js/rackets.js?v=102"></script>
-<script src="js/strings.js?v=102"></script>
-<script src="js/geometry.js?v=102"></script>
-<script src="js/racketSvg.js?v=102"></script>
-<script src="js/steps.js?v=102"></script>
-<script src="js/throat.js?v=102"></script>
-<script src="js/knot.js?v=102"></script>
-<script src="js/startKnot.js?v=102"></script>
-<script src="js/machines.js?v=102"></script>
-<script src="js/job.js?v=102"></script>
-<script src="js/wizard.js?v=102"></script>
-<script src="js/holes.js?v=102"></script>
-<script src="js/weaveQuiz.js?v=102"></script>
-<script src="js/app.js?v=102"></script>
+<script src="js/fmt.js?v=104"></script>
+<script src="js/frame.js?v=104"></script>
+<script src="js/strings.js?v=104"></script>
+<script src="js/geometry.js?v=104"></script>
+<script src="js/racketSvg.js?v=104"></script>
+<script src="js/steps.js?v=104"></script>
+<script src="js/throat.js?v=104"></script>
+<script src="js/knot.js?v=104"></script>
+<script src="js/startKnot.js?v=104"></script>
+<script src="js/machines.js?v=104"></script>
+<script src="js/job.js?v=104"></script>
+<script src="js/wizard.js?v=104"></script>
+<script src="js/holes.js?v=104"></script>
+<script src="js/weaveQuiz.js?v=104"></script>
+<script src="js/app.js?v=104"></script>
 </body>
 </html>

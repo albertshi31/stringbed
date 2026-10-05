@@ -5,7 +5,7 @@
 const Throat = (function () {
 
   function open(cfg) {
-    const { racket, bed, throatPairs, headSvg, yokeSvg, depthSvg } = cfg;
+    const { bed, throatPairs, headSvg, yokeSvg, depthSvg } = cfg;
     /* Read from the routing plan rather than restated here. Where the mains
        FINISH is a parity result, and the old wording -- "run up to the head,
        where they tie off" -- was only right for the frames whose mains-per-side
@@ -40,7 +40,6 @@ const Throat = (function () {
       return `<div class="tilt-layer" aria-hidden="true" style="transform:translateZ(${-(i + 1) * STEP}px);${shade}"
         >${decorative(depthSvg)}</div>`;
     }).join('');
-    const th = racket.theme;
     const mq = q => !!(window.matchMedia && window.matchMedia(q).matches);
     const touchOnly = mq('(hover: none)');
     const narrow = mq('(max-width: 860px)');
@@ -138,7 +137,8 @@ const Throat = (function () {
         <button class="modal-x" aria-label="Close">&times;</button>
         <header class="th-head">
           <h2>Count the sets at the throat</h2>
-          <p>Tip the frame back and count the sets of holes either side of the center line.</p>
+          <p>Tip the frame back and count the sets of holes either side of the center line. The drawing
+            shows the ${throatPairs} sets you entered.</p>
           <button type="button" class="btn th-why-btn"><span class="why-q" aria-hidden="true">?</span>Why count?</button>
         </header>
         <div class="th-why" hidden>
@@ -167,7 +167,7 @@ const Throat = (function () {
                 <!-- one image, described once: role="img" stops assistive tech
                      walking the frame's internals as separate content -->
                 <div class="tilt-face" role="img"
-                     aria-label="${racket.brand} ${racketName(racket)}, tipped back to show the throat.
+                     aria-label="Your racket, tipped back to show the throat.
                        The ${throatPairs} sets of main holes either side of the center line are ringed.">
                   ${decorative(headSvg)}</div>
               </div>
@@ -205,6 +205,12 @@ const Throat = (function () {
                   ? '. The short side ties off there and the long side carries on into the crosses.'
                   : ' and tie off there.'}</em>
             </div>
+            ${cfg.onPick ? `<div class="th-pick">
+              <span id="thPickL">What did you count on your frame?</span>
+              <div class="seg" role="radiogroup" aria-labelledby="thPickL">${[3, 4].map(n => `
+                <button type="button" role="radio" data-pick="${n}" class="${n === throatPairs ? 'on' : ''}"
+                  aria-checked="${n === throatPairs}">${n} sets</button>`).join('')}</div>
+            </div>` : ''}
             <p class="note">Most frames also print the pattern and tie-off holes inside the throat.</p>
           </div>
         </div>
@@ -318,6 +324,11 @@ const Throat = (function () {
       (on ? host.querySelector('.th-why-back') : host.querySelector('.th-why-btn')).focus();
     };
     host.querySelector('.th-why-btn').addEventListener('click', () => showWhy(true));
+    const pick = host.querySelector('.th-pick');
+    if (pick) pick.addEventListener('click', e => {
+      const b = e.target.closest('[data-pick]');
+      if (b && cfg.onPick) cfg.onPick(+b.dataset.pick);
+    });
     host.querySelector('.th-why-back').addEventListener('click', () => showWhy(false));
     host.querySelector('.modal-back').addEventListener('click', close);
     document.addEventListener('keydown', esc);
