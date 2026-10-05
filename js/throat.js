@@ -201,7 +201,9 @@ const Throat = (function () {
               <em>Feed the two center mains from the ${pl.mainsStart} toward the
                 ${pl.firstMainEnd}. After working outward through ${perSide} mains per side, both
                 main-string ends ${pl.mainsEnd === pl.mainsStart ? 'return to' : 'arrive at'} the
-                ${pl.mainsEnd} and tie off there.</em>
+                ${pl.mainsEnd}${pl.onePiece
+                  ? '. The short side ties off there and the long side carries on into the crosses.'
+                  : ' and tie off there.'}</em>
             </div>
             <p class="note">Most frames also print the pattern and tie-off holes inside the throat.</p>
           </div>

@@ -63,7 +63,7 @@ const Wizard = (function () {
           <div><dt>Throat holes</dt><dd>${r.throatPairs} sets</dd></div>
           <div><dt>Recommended tension</dt><dd>${r.tension[0]} to ${r.tension[1]} lb</dd></div>
         </dl>
-        <p class="hint">Its own pattern is used. You can try others later on the Racket tab.</p>
+        <p class="hint">It is strung in its own stock pattern.</p>
         <!-- A catalogue of a few dozen frames will not hold someone's actual racket, and
              the failure mode is silent: they pick something that looks close
              and trust its routing. Say what the app can and cannot tell

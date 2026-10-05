@@ -123,7 +123,7 @@ const MachineGuide = (function () {
             </details>
           </article>`).join('')}
       </div>
-      <h3 class="sec-h">Clamps and mounting matter more than the head</h3>
+      <h3 class="sec-h">Clamps and mounting matter more than the tension head</h3>
       <div class="mg-row">
         ${CLAMPS.map(c => `<div class="mg-mini"><span class="tag">${c.tag}</span><h4>${c.name}</h4><p>${c.body}</p></div>`).join('')}
       </div>

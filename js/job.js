@@ -147,8 +147,8 @@ const Job = (function () {
     throat:  'The end of the hoop where the frame narrows into the handle.',
     head:    'The end of the hoop furthest from the handle.',
     grommet: 'The plastic sleeve in each hole that the string passes through, so it does not chafe on the frame.',
-    'tie-off': 'The hole where a run of string is knotted off. Frames mark these holes, and they are usually a little larger than the rest.',
-    hybrid:  'Two different kinds of string in one racket, one in the mains and another in the crosses. It has to be strung two-piece, with two separate lengths of string.',
+    'tie-off': 'The hole where a run of string is knotted off. Many frames mark these, and they are often a little larger.',
+    hybrid:  'Two different kinds of string in one racket, one in the mains and another in the crosses. It has to be strung two piece, with two separate lengths of string.',
     /* Words the interface uses without explaining them. Each is one line,
        shown only when asked for, so the bench stays as quiet as it was. */
     'M/C': 'Short for mains and crosses, always in that order. In a string pattern, 16x19 means 16 mains and 19 crosses, and 18x20 means 18 mains and 20 crosses. In a tension, 55/53 lb means the mains at 55 lb and the crosses at 53 lb.',

@@ -137,7 +137,7 @@ const RACKETS = [
   {
     id: 'ezone98',
     beamMm: 23.0,
-    throatPairs: 4,
+    throatPairs: 3, // Yonex: start at throat, tie off 8T
     brand: 'Yonex',
     model: 'EZONE 98',
     pattern: '16x19',
@@ -1090,27 +1090,11 @@ const RACKETS = [
   });
 })();
 
-/* The app never names a head size: a frame is its family and its pattern,
-   "Blade 16x19". So a model's name loses its version and any head-size number
-   ("Blade 98 v9" is "Blade", "Pro Staff 97L" is "Pro Staff"), and frames that
-   then share a name and pattern are one entry. The one kept is the size
-   closest to 98, the usual size. Numbers that are not head sizes, like the 305
-   in "TF40 305", stay. Old saves that named a merged frame are sent to the one
-   kept, through RACKET_ALIASES. */
-const racketName = r => r.model.replace(/\s+v\d+$/i, '').split(/\s+/)
-  .filter(t => !/^(8\d|9\d|1[01]\d)[A-Z]{0,2}$/.test(t)).join(' ');
+/* A frame is named by its model, the way a player names it: "Blade 98",
+   "Pro Staff 97L", "Clash 100". Only the version suffix goes ("Blade 98 v9"
+   is "Blade 98"). Head-size numbers stay, so every frame in the catalogue is
+   listed on its own. RACKET_ALIASES maps an old saved racket id to a current
+   one. It is empty now, but old saves and job.js still read it. */
+const racketName = r => r.model.replace(/\s+v\d+$/i, '');
 const RACKET_ALIASES = {};
-(function () {
-  const keep = {};
-  RACKETS.forEach(r => {
-    const k = r.brand + '|' + racketName(r) + '|' + r.pattern;
-    const cur = keep[k];
-    if (!cur || Math.abs(r.headSize - 98) < Math.abs(cur.headSize - 98)) keep[k] = r;
-  });
-  const kept = new Set(Object.values(keep));
-  RACKETS.forEach(r => {
-    if (!kept.has(r)) RACKET_ALIASES[r.id] = keep[r.brand + '|' + racketName(r) + '|' + r.pattern].id;
-  });
-  for (let i = RACKETS.length - 1; i >= 0; i--) if (!kept.has(RACKETS[i])) RACKETS.splice(i, 1);
-})();
 

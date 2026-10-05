@@ -121,9 +121,10 @@ const Steps = (function () {
        up. The plan is right about where the string is, but stringing references
        prefer crosses head to throat, so say so on that path only. */
     /* On a one piece the frame decides this: the crosses start wherever the
-       long side's last main comes out. Most makers advise against crosses
-       from the throat up, so this steers the reader to two piece. */
-    const upNote = 'On this frame a one piece runs the crosses from the throat up. Most makers advise against that because it can stretch the hoop. Use two piece instead.';
+       long side's last main comes out. Bottom-up crosses are normal on a one
+       piece (Wilson's own sheets start them at the throat), so this only says
+       that top down is preferred where the frame allows it. */
+    const upNote = 'On this frame a one piece runs the crosses from the throat up. That is normal and many makers’ own instructions do it. Top down is preferred when the frame allows it, and two piece always does.';
     /* The one-piece line in the method step describes that method whichever
        one is selected, so it gets its own plan. */
     const plOne = plan(throatPairs, 'one', nC, nM);
@@ -273,6 +274,8 @@ const Steps = (function () {
           ...(hasGut ? [`Natural gut: don't kink it or grip it with pliers.`] : []),
           MEASURE_TIP
         ] : [
+          /* A set is halved on every frame, as the owner chose and as makers do
+             (Wilson's own Blade 18x20 sheet uses 20 ft mains from a 40 ft set). */
           `<b>Using a packaged set?</b> Cut it into <b>two equal halves</b>, one for the mains and one for
            the crosses.`,
           `<b>Cutting from a reel?</b> Cut ${bothR(cut.mains)} for the mains and ${bothR(cut.crosses)} for

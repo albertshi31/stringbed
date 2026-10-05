@@ -1431,14 +1431,15 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .knot-svg text[font-size="6.5"]+text[font-size="6.5"]{transform:translateY(-1px)}
   .sk-svg text[font-size="8.5"],.sk-svg text[font-size="9"],.sk-svg text[font-size="9.5"]{font-size:10px}
 
-  /* past step 1 the first-time card is one slim line */
-  .primer.slim{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 12px;margin-bottom:12px}
-  .primer.slim p{font-size:0;padding:0;margin:0;flex:none}
+  /* past step 1 the first-time card is slim: the heading and Got it on one
+     line, the links on their own row under it, wrapping rather than cut off */
+  .primer.slim{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:4px 6px 4px 12px;margin-bottom:12px}
+  .primer.slim p{font-size:0;padding:0;margin:0;flex:1 1 auto}
   .primer.slim p b{font-size:13px}
-  .primer.slim .primer-links{flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:0 14px}
-  .primer.slim .primer-links::-webkit-scrollbar{display:none}
-  .primer.slim .primer-links .linkbtn{white-space:nowrap;font-size:13px}
-  .primer.slim .primer-x{position:static;flex:none}
+  .primer.slim .primer-links{order:3;flex:1 1 100%;min-width:0;flex-wrap:nowrap;gap:0 16px}
+  .primer.slim .primer-links .linkbtn{flex:1 1 0;min-width:0;white-space:normal;text-align:left;
+    line-height:1.25;font-size:13px}
+  .primer.slim .primer-x{position:static;flex:none;order:2}
 
   /* step 5: the walk-through drawing pins, compact, and its cards scroll under it */
   .step-b > .stage[data-view=start]{position:sticky;top:0;z-index:6;background:var(--bg);

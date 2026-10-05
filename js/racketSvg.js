@@ -822,7 +822,16 @@ const RacketSVG = (function () {
         const fs = fz(10 * Math.max(1, o.labelScale || 1));
         // bold type runs wider than 0.55 em a letter; the scaled-up phone chips showed it
         const cw = fs > 10 ? 0.6 : 0.55;
-        const maxCh = Math.max(8, Math.floor((vb[2] - 20) / (fs * cw)));
+        /* On a phone the drawing is short and wide, so the svg box is wider
+           than the racket and the strip either side of it is empty. roomW is
+           that full width in drawing units, and the chips may use it. The
+           chips then sit beside the centre pair instead of across it, which
+           is what kept them off the clamps and off each other. */
+        const room = Math.max(vb[2], Math.min(o.roomW || 0, vb[2] * 2.4));
+        const L0 = vb[0] + vb[2] / 2 - room / 2;
+        const sideRoom = side > 0 ? (L0 + room - 3) - (x + 27) : (x - 27) - (L0 + 3);
+        const sideCh = Math.floor((sideRoom - 14) / (fs * cw));
+        const maxCh = sideCh >= 12 ? sideCh : Math.max(8, Math.floor((vb[2] - 20) / (fs * cw)));
         const lines = [];
         String(txt).split(' ').forEach(wd => {
           const cur = lines[lines.length - 1];
@@ -836,7 +845,7 @@ const RacketSVG = (function () {
            (the card is about 456 px wide) cut the label off against the left of
            the racket. Clamped into the box: the leader still points at the hole
            it belongs to, so nothing is lost by sliding the chip. */
-        const lo = vb[0] + 3, hi = vb[0] + vb[2] - w - 3;
+        const lo = L0 + 3, hi = L0 + room - w - 3;
         const rx = Math.max(lo, Math.min(side > 0 ? x + 27 : x - 32 - w + 5, hi));
         /* Sliding a chip in off the edge can park it on the very glyph it is
            labelling -- "clamp here" printed over the clamp. When the chip still
@@ -853,6 +862,8 @@ const RacketSVG = (function () {
           if (rx < q.x + q.w + 3 && rx + w > q.x - 3 && Math.abs(cy - q.y) < (h + q.h) / 2 + 3)
             cy = q.y + inward * ((h + q.h) / 2 + 4);
         });
+        // never off the top or bottom of the drawing
+        cy = Math.max(vb[1] + h / 2 + 3, Math.min(vb[1] + vb[3] - h / 2 - 3, cy));
         placed.push({ x: rx, y: cy, w, h });
         const lead = x <= rx ? rx - 3 : rx + w + 3;
         return `<line x1="${f(x)}" y1="${f(y)}" x2="${f(lead)}" y2="${f(cy)}"

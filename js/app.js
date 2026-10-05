@@ -120,6 +120,9 @@
      not a thing you select, it is what two piece with two different strings
      already is. */
   const crossLocked = () => state.method === 'one';
+  /* The crosses a hybrid had before one piece made them follow the mains, so
+     going back to two piece gives them back. */
+  let heldCross = null;
   const hybrid = () => state.crossId !== state.mainId;
 
   function normalizeState() {
@@ -161,6 +164,7 @@
       pace: opts && opts.pace, clampDemo: opts && opts.clampDemo,
       startBeat: opts && opts.startBeat, markScale: opts && opts.markScale,
       labelScale: opts && opts.labelScale,
+      roomW: opts && opts.roomW,
       highlightYoke: opts && opts.highlightYoke, markThroatPairs: opts && opts.markThroatPairs,
       stepIndex: opts && opts.stepIndex, tension: opts && opts.tension,
       mountRig: opts && opts.mountRig, hideLabel: opts && opts.hideLabel,
@@ -183,7 +187,8 @@
     const r = svg && svg.getBoundingClientRect();
     if (!vb || !vb.width || !r || !r.width || !r.height) return host.innerHTML;
     const s = Math.min(r.width / vb.width, r.height / vb.height);
-    const fit = { minFont: 12.2 / s, hitR: touchOnly() ? 21 / s : 0 };
+    // roomW: how wide the svg box is in drawing units, past the racket's own width
+    const fit = { minFont: 12.2 / s, hitR: touchOnly() ? 21 / s : 0, roomW: r.width / s };
     if (fit.minFont <= 8 && !fit.hitR) return host.innerHTML;
     host.innerHTML = make(fit);
     return host.innerHTML;
@@ -211,12 +216,12 @@
         note: `With one piece, only the short side is knotted here. The long side carries straight on into the crosses at the ${pl.crossStart}.` });
       const e = crossXY(pl.crossEnd, pl.crossEndSide);
       k.push({ x: e.x, y: e.y, label: 'Final cross knot', lesson: 'finish',
-        note: `${nC} crosses is an ${nC % 2 ? 'odd' : 'even'} number, and the string changes side on every one, so it finishes at the ${pl.crossEnd}.` });
+        note: `${nC} crosses is an ${nC % 2 ? 'odd' : 'even'} number, and the string changes side on every one, so it finishes on the ${pl.knotsSameSide ? 'same side as' : 'opposite side from'} the mains knot, at the ${pl.crossEnd}.` });
     } else {
       k.push({ x: leftMain.x, y: mainY(leftMain), label: 'Main tie-off', lesson: 'finish',
-        note: 'Both mains end at this end and get knotted at the tie-off holes the frame marks.' });
+        note: `Both ends of the mains finish at the ${pl.mainsEnd} and get knotted at the tie-off holes the frame marks.` });
       k.push({ x: rightMain.x, y: mainY(rightMain), label: 'Main tie-off', lesson: 'finish',
-        note: 'Both mains end at this end and get knotted at the tie-off holes the frame marks.' });
+        note: `Both ends of the mains finish at the ${pl.mainsEnd} and get knotted at the tie-off holes the frame marks.` });
       const st = crossXY(pl.crossStart, pl.crossStartSide);
       k.push({ x: st.x, y: st.y, label: 'Cross starting knot', lesson: 'start',
         note: `With two piece, the cross string needs its own starting knot, at the ${pl.crossStart}.` });
@@ -251,7 +256,12 @@
     if (!Job.hasChecks(state)) return true;
     const n = Object.keys(state.checked).filter(k => state.checked[k]).length;
     if (confirm(`Changing the setup starts a different job, so your ${n} ticked ` +
-                `check${n === 1 ? '' : 's'} will be cleared.\n\nChange it anyway?`)) return true;
+                `check${n === 1 ? '' : 's'} will be cleared.\n\nChange it anyway?`)) {
+      // a different job starts at its first step
+      state.step = 0; state.stepOpen = true; state.startBeat = 1; state.stringStep = 0;
+      stopBeats(); clearTimeout(stringTimer); stringTimer = null;
+      return true;
+    }
     Object.assign(state, before);
     return false;
   }
@@ -390,7 +400,7 @@
     else if (sm || sc) warn = [sm && `Mains are ${sm}`, sc && `Crosses are ${sc}`].filter(Boolean).join(' and ')
       + ` ${c.r.brand}'s range.`;
     el('tenWarn').hidden = !warn;
-    el('tenWarn').textContent = warn ? warn + ' Standard tensions are between 48-60 lb.' : '';
+    el('tenWarn').textContent = warn ? warn + ' Most rackets are strung between 48 and 60 lb.' : '';
 
     if (!el('selGauge').options.length)
       el('selGauge').innerHTML = GAUGES.map(g =>
@@ -399,7 +409,9 @@
     markSeg('methodSeg', 'm', state.method);
     fillSeg('machineSeg', Job.MACHINES.map(m => ({ v: m.id, t: m.name.split(' ')[0] })), 'machine');
     markSeg('machineSeg', 'machine', state.machineType);
-    el('setupHelp').textContent = (state.method === 'one'
+    el('setupHelp').textContent = (state.method === 'one' && heldCross
+      ? 'One piece uses one string, so the crosses now match the mains. ' : '')
+      + (state.method === 'one'
       ? 'One piece uses 2 knots and one string all the way through. '
       : 'Two piece uses 4 knots, and the mains and crosses can be different kinds of string. ')
       + Job.machine(state.machineType).clamp;
@@ -410,8 +422,7 @@
     /* The markers are the only thing on the page that can be touched without
        looking like a control, so the page has to say so. */
     el('stringHint').innerHTML = `<span><b>${state.method === 'one' ? 2 : 4} knots</b> marked on the frame`
-      + (touchOnly() ? '. Tap a marker to see which knot it is.'
-                     : '. Hover over a marker to see what it is, or click it for the knot diagram.') + '</span>';
+      + '. ' + markerWords('string') + '</span>';
 
     const s = c.stats;
     const cut = Fmt.cutFor(s, state.method === 'one');
@@ -578,9 +589,7 @@
     const key = !hasBadges ? '' : st.id === 'crosses'
       ? `${chip(1)} weave it through · ${chip(2)} tension it · ${chip(3)} clamp it`
       : `${chip(1)} pull it through · ${chip(2)} tension it · ${chip(3)} clamp it`;
-    const knotLine = !hasKnots ? '' : touchOnly()
-      ? 'Tap a marker to see which knot goes there.'
-      : 'Hover over a marker to see which knot goes there. Click it to learn the knot.';
+    const knotLine = !hasKnots ? '' : markerWords('do');
     /* An animated run draws its knots last, so the line about them waits
        until they are there to tap; until then it would point at nothing. */
     const late = /class="knots" style="--d:([\d.]+)s;opacity:0"/.exec(view);
@@ -795,9 +804,44 @@
   }
 
   const nearestGauge = g => GAUGES.reduce((a, b) => Math.abs(b - g) < Math.abs(a - g) ? b : a);
+  /* A phone that reports a mouse-like pointer still gets tapped, so a touch
+     seen once settles it for the rest of the visit. */
+  let sawTouch = false;
   const touchOnly = () => {
-    try { return window.matchMedia('(hover: none)').matches; } catch (e) { return false; }
+    if (sawTouch) return true;
+    try {
+      return window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches;
+    } catch (e) { return false; }
   };
+  /* What a knot marker does, in the words for the pointer in hand. Every hint
+     about the markers is built from here, so no render path can miss it. */
+  const MARKER_WORDS = {
+    string: ['Tap a marker to see which knot it is.',
+             'Hover over a marker to see what it is, or click it for the knot diagram.'],
+    do: ['Tap a marker to see which knot goes there.',
+         'Hover over a marker to see which knot goes there. Click it to learn the knot.']
+  };
+  const markerWords = k => MARKER_WORDS[k][touchOnly() ? 0 : 1];
+  /* the first touch rewrites any mouse wording already on screen */
+  function noteTouch() {
+    if (sawTouch) return;
+    sawTouch = true;
+    ['stringHint', 'doHint'].forEach(id => {
+      const h = el(id); if (!h) return;
+      const walk = document.createTreeWalker(h, 4);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        Object.keys(MARKER_WORDS).forEach(k => {
+          if (n.nodeValue.indexOf(MARKER_WORDS[k][1]) >= 0)
+            n.nodeValue = n.nodeValue.replace(MARKER_WORDS[k][1], MARKER_WORDS[k][0]);
+        });
+      }
+    });
+    all('#steps .beat-hint').forEach(p => p.childNodes.forEach(n => {
+      if (n.nodeType === 3 && /click a card/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace('click a card', 'tap a card');
+    }));
+  }
+  document.addEventListener('touchstart', noteTouch, { passive: true, capture: true });
+  document.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') noteTouch(); }, true);
   const reduceMotion = () => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (e) { return false; }
@@ -1077,6 +1121,7 @@
     /* The guide only asks before throwing away work: a job with ticked checks. */
     if (Job.hasChecks(state) && !confirm('Start a new job? Your ticked checks will be cleared.')) return;
     state.purpose = Job.purpose(d.purpose).id;
+    heldCross = null;
     state.racketId = d.racketId;
     state.machineType = d.machineType;
     state.method = d.method;
@@ -1137,6 +1182,9 @@
        it took half the screen and showed nothing to do. */
     const cur = steps[state.step];
     st.hidden = !!(narrow() && cur && (cur.id === 'tools' || cur.id === 'measure'));
+    /* with every step closed there is nothing to draw beside, and the phone
+       layout would lift the drawing above the heading */
+    if (narrow() && !body) st.hidden = true;
     if (narrow() && body) {
       body.insertBefore(st, body.firstChild);
       const head = document.querySelector('.top');
@@ -1364,18 +1412,23 @@
     /* Typed, not dragged. A half-typed number ("5" on the way to "55") is left
        alone until it is a real tension; Enter or leaving the box settles it,
        pulled into 35 to 70 lb if it is outside. */
+    // a typed tension survives a reload even if the box is never left
+    let saveTimer = null;
+    const saveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); };
     const typed = v => { const n = Number(v); return v !== '' && n >= 35 && n <= 70 ? Math.round(n) : null; };
     el('tMain').addEventListener('input', e => {
       const v = typed(e.target.value); if (v === null) return;
       tenStart(); state.tMain = v;
       if (state.linkTension) state.tCross = v;
+      saveSoon();
     });
     el('tCross').addEventListener('input', e => {
       const v = typed(e.target.value); if (v === null) return;
       tenStart(); state.tCross = v;
+      saveSoon();
     });
     ['tMain', 'tCross'].forEach(id => el(id).addEventListener('change', e => {
-      const v = clampTen(e.target.value === '' ? state[id] : e.target.value);
+      const v = clampTen(e.target.value, state[id]);
       tenStart(); state[id] = v; e.target.value = v;
       if (id === 'tMain' && state.linkTension) state.tCross = v;
       tenCommit();
@@ -1394,13 +1447,21 @@
     });
     el('methodSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-m]'); if (!b || b.disabled) return;
+      const from = state.method, to = b.dataset.m;
+      const held = { kind: state.crossKind, id: state.crossId };
       if (!guardConfig(() => {
-        state.method = b.dataset.m;
-        if (b.dataset.m === 'one') {          // one string, so the crosses follow
+        state.method = to;
+        if (to === 'one') {                   // one string, so the crosses follow
           state.crossKind = state.kind;
           state.crossId = state.mainId;
+        } else if (from === 'one' && heldCross) {
+          // back to two piece: the crosses the reader had chosen come back
+          state.crossKind = heldCross.kind;
+          state.crossId = heldCross.id;
         }
       })) { render(false); return; }
+      if (to === 'one' && from === 'two') heldCross = held.id !== state.mainId ? held : null;
+      else if (to === 'two') heldCross = null;
       render(false); selectKnot(knotLesson);
     });
     el('machineSeg').addEventListener('click', e => {
@@ -1535,7 +1596,12 @@
     });
   }
 
-  const clampTen = v => Math.max(35, Math.min(70, Math.round(Number(v)) || 52));
+  /* Any number is pulled into 35 to 70 lb, 0 included. Only a box with no
+     number in it falls back. */
+  const clampTen = (v, fallback) => {
+    const n = typeof v === 'string' && v.trim() === '' ? NaN : Number(v);
+    return Number.isFinite(n) ? Math.max(35, Math.min(70, Math.round(n))) : (fallback || 52);
+  };
 
   function openThroat() {
     Throat.open({
