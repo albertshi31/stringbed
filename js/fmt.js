@@ -59,8 +59,13 @@ const Fmt = (function () {
      than sending a beginner to buy a reel. */
   const SET_M = 12.2;
 
-  /* "11.0 m (36 ft)" — both units, one decimal in metric, none in imperial */
-  const metres = m => `${round1(m).toFixed(1)} m (${Math.round(m * FT)} ft)`;
+  /* "11.0 m (36 ft)": both units, one decimal in metric, none in imperial */
+  /* Every length the app shows is in this one form. Under a foot and a half
+     the imperial half is given in inches, so a short leftover is not "0 ft". */
+  const metres = m => {
+    const ft = m * FT;
+    return `${round1(m).toFixed(1)} m (${ft < 1.5 ? Math.round(ft * 12) + ' in' : Math.round(ft) + ' ft'})`;
+  };
   const metresOnly = m => `${round1(m).toFixed(1)} m`;
   const feet = m => `${Math.round(m * FT)} ft`;
 

@@ -126,7 +126,7 @@ const Wizard = (function () {
     }
     const nav = e.target.closest('[data-wz]');
     if (!nav) return;
-    /* Back on the first question returns to the start dialog */
+    /* Back on the first question closes the guide */
     if (nav.dataset.wz === 'back') {
       if (!stepIx) { onCancel(); return; }
       stepIx--; render(); return;

@@ -900,14 +900,16 @@ const RacketSVG = (function () {
       // where the mains were fed IN, and where their loose ends now hang
       const pullEnd = anchorBottom ? 'head' : 'throat';
 
-      // 1 thread · 2 clamp · 3 tension · 4 clamp · 5 tension · 6 clamp
+      // 1 thread · 2 clamp · 3 tension · 4 clamp · 5 unclamp and tension · 6 clamp
       const modeA = b === 5 ? 'live' : (b === 3 ? 'dim' : '');
       const modeB = b === 3 ? 'live' : (b === 5 ? 'dim' : '');
       let g = drawMain(A, modeA) + drawMain(B, modeB);
       g += tailGlyph(A.x, tailAt(A), tailDir, 34, 0, true);
       g += tailGlyph(B.x, tailAt(B), tailDir, 34, 0, true);
 
-      if (b >= 2 && b < 6) g += clampGlyph(A.x, anchorY(A), 'v', 0, true);
+      /* Only two clamps are ever on: the one from card 2 comes off before the
+         left main is pulled, so a machine with two fixed clamps can follow it. */
+      if (b >= 2 && b < 5) g += clampGlyph(A.x, anchorY(A), 'v', 0, true);
       if (b >= 4) g += clampGlyph(B.x, pullClampY(B), 'v', 0, true);
       if (b >= 6) g += clampGlyph(A.x, pullClampY(A, true), 'v', 0, true);
 
@@ -915,14 +917,14 @@ const RacketSVG = (function () {
         // the label names where the LOOSE ends are, which is the far end from
         // the holes they were fed through -- pullEnd, not endName
         g += tag(A.x, tailAt(A) + tailDir * 14, `loose ends at the ${pullEnd}`, -1);
-        g += tag(B.x, tailAt(B) + tailDir * 40, `\u2248${perSideM.toFixed(1)} m of slack`, 1);
+        g += tag(B.x, tailAt(B) + tailDir * 40, `\u2248${Fmt.metres(perSideM)} of slack`, 1);
       }
       if (b === 2) g += tag(A.x, anchorY(A), 'clamp here, across from the slack', -1);
       if (b === 3) { g += gripper(B.x, pullY(B)); g += tag(B.x, -bT * 0.15, 'tension this one', 1); }
       if (b === 4) g += tag(B.x, pullClampY(B), `clamp it at the ${pullEnd}`, 1);
       if (b === 5) { g += gripper(A.x, pullY(A));
                      g += tag(A.x, -bT * 0.15, 'tension this one', -1);
-                     g += tag(A.x, anchorY(A), 'release this clamp after', 1); }
+                     g += tag(A.x, anchorY(A), 'card 2 clamp off first', 1); }
       if (b === 6) { g += tag(A.x, pullClampY(A, true), `clamp it at the ${pullEnd} too`, -1);
                      g += tag(B.x, pullClampY(B), 'both holding', 1); }
 
@@ -951,7 +953,11 @@ const RacketSVG = (function () {
              font-family="Inter, Helvetica, Arial, sans-serif" fill="#0b0e12">${n}</text>
          </g>`;
       let g = '';
-      if (stage === 'mains') {
+      /* On the tie-off frame the knots are the point. The gripper, clamp and
+         tail of the last string were drawn on top of the knot marker beside
+         them, so that frame shows the strung bed and the knots only. */
+      if (o.tied) { /* nothing more to draw */ }
+      else if (stage === 'mains') {
         const m = mainOrder[stepIdx - 1];
         if (m) {
           const n = Math.floor(rankOf(m) / 2);
@@ -1088,13 +1094,14 @@ const RacketSVG = (function () {
           <circle cx="${f(c[0])}" cy="${f(c[1])}" r="${yokeView ? 5.4 : 4.2}" fill="none"
             stroke="${ink}" stroke-width="1.8" stroke-opacity="0.95"/>`;
       });
-      /* counted left to right, one number for each pair of holes beside each
-         other: 1, 2, 3 for three sets, 1, 2, 3, 4 for four */
-      const ordered = marked.slice().sort((u, v) => u[0] - v[0]);
-      for (let k = 0; k + 1 < ordered.length; k += 2) {
-        const a = ordered[k], b = ordered[k + 1];
-        labels.push([(a[0] + b[0]) / 2, Math.max(a[1], b[1]) + 1.6, k / 2 + 1]);
-      }
+      /* counted outward from the center line on each side, the same way the
+         "Why count?" drawing numbers them: 1, 2, 3 on the left and 1, 2, 3 on
+         the right for three sets. A set is the two holes with the same number. */
+      [-1, 1].forEach(side => {
+        marked.filter(h => Math.sign(h[0]) === side)
+          .sort((u, v) => Math.abs(u[0]) - Math.abs(v[0]))
+          .forEach((h, k) => labels.push([h[0], h[1] + 1.6, k + 1]));
+      });
       p.push(`<g class="throat-marks">${rings}</g>`);
     }
 
@@ -1149,7 +1156,7 @@ const RacketSVG = (function () {
     // the stepped views have their own caption, and the badges live up here
     if (!beatView && !o.hideLabel) p.push(`<text class="pat-label" x="0" y="${f(REF_TOP + (RIG ? 12 : 14) + (fz(9.5) - 9.5) * 0.8)}" text-anchor="middle" font-size="${f(fz(9.5))}"
       font-family="Inter, Helvetica, Arial, sans-serif" font-weight="600" letter-spacing="2.4"
-      fill="${ink2}" fill-opacity="0.55">${esc(bed.patternLabel.toUpperCase())}</text>`);
+      fill="${ink2}" fill-opacity="0.55">${esc(bed.patternLabel)}</text>`);
 
     if (yokeView) {
       p.push('</g>');   // end squash

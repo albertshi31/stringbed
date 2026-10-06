@@ -14,7 +14,7 @@
 
   const state = {
     // the frame in the user's hands: read off it, never looked up
-    pattern: '16x19', throatPairs: 3, headSize: null,
+    pattern: '16x19', throatPairs: 3, headSize: null, model: null,
     mainId: 'syngut', crossId: 'syngut',
     mainGauge: null, crossGauge: null,
     tMain: 55, tCross: 55,
@@ -23,7 +23,7 @@
     kind: 'Synthetic gut',
     step: 0, stepOpen: true, startBeat: 1, stringStep: 0, card: 0, rCard: 0,
     tab: 'racket', sub: 'words', knot: 'finish', primerDone: false, checked: {},
-    seenStart: false, jobStatus: 'setup', purpose: 'practice',
+    jobStatus: 'setup', purpose: 'practice',
     mode: 'real', sideCard: 'racket'
   };
   const DEFAULTS = JSON.parse(JSON.stringify(state));
@@ -237,11 +237,14 @@
   function renderSpec(c) {
     const cut = Fmt.cutFor(c.stats, state.method === 'one');
     el('specStrip').innerHTML = [
-      ['Racket', frameLabel(c.r)],
+      /* the pattern leads. The model is only the look, so on a phone, where the
+         strip is one line of plain text, it is left off */
+      ['Racket', frameLabel(c.r) + (modelById(state.model)
+        ? `<span class="spec-model"> · ${modelById(state.model).name}</span>` : '')],
       ['String', stringWords(c.sM, c.sC, c.gM)],
       ['Tension', state.tMain === state.tCross ? state.tMain + ' lb'
           : state.tMain + ' / ' + state.tCross + ' lb'],
-      ['Cut', Fmt.metresOnly(cut)]
+      ['Cut', Fmt.metres(cut)]
     ].map(([k, v]) => `<span class="spec-i"><em>${k}</em><b>${v}</b></span>`).join('');
   }
 
@@ -268,6 +271,12 @@
     markSeg('patternSeg', 'pattern', c.r.pattern);
     fillSeg('setsSeg', [3, 4].map(n => ({ v: String(n), t: n + ' sets' })), 'sets');
     markSeg('setsSeg', 'sets', String(c.r.throatPairs));
+    const sel = el('selModel');
+    if (!sel.options.length)
+      sel.innerHTML = '<option value="">Not listed / skip</option>'
+        + MODEL_BRANDS.map(b => `<optgroup label="${b}">${RACKET_MODELS.filter(m => m.brand === b)
+          .map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+    sel.value = state.model || '';
     const head = el('selHead');
     if (!head.options.length)
       head.innerHTML = `<option value="">${HEAD_NOT_SURE}</option>`
@@ -275,18 +284,22 @@
     head.value = state.headSize ? String(state.headSize) : '';
     renderRDeck(c);
 
+    /* On the hole sets card the drawing rings the sets just entered, the same
+       way step 4 does, so the count can be checked against the picture. */
+    const sets = state.rCard === 2 ? { highlightYoke: true, markThroatPairs: c.throatPairs } : {};
     paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
-      Object.assign({ noKnots: true }, fit))));
+      Object.assign({ noKnots: true }, sets, fit))));
     // the summary strip already gives the cut length: no fact boxes here
   }
 
   /* The racket tab is a deck too, the same shape as the string tab: one answer
      at a time, the rail above saying what each one is set to. */
-  const R_CARDS = ['Pattern', 'Hole sets', 'Head size'];
+  const R_CARDS = ['Model', 'Pattern', 'Hole sets', 'Head size'];
   const rCardEls = () => all('#tab-racket .rcard');
   function rCardSummary(c, i) {
-    if (i === 0) return c.r.pattern;
-    if (i === 1) return c.r.throatPairs + ' sets';
+    if (i === 0) { const m = modelById(state.model); return m ? m.name : 'Skip'; }
+    if (i === 1) return c.r.pattern;
+    if (i === 2) return c.r.throatPairs + ' sets';
     return state.headSize ? state.headSize + ' sq in' : 'Not sure';
   }
   function renderRDeck(c) {
@@ -304,7 +317,7 @@
   function goRCard(i) {
     if (i >= R_CARDS.length) { showTab('string'); return; }
     state.rCard = Math.max(0, Math.min(R_CARDS.length - 1, i));
-    renderRDeck(cache || compute());
+    renderRacket(cache || compute());
     save();
   }
 
@@ -314,15 +327,17 @@
      a time, the rail above it showing where you are AND what you have already
      chosen, so nothing is hidden, only quiet. Only the kind of string is asked,
      never a brand or model. */
-  const CARDS = ['Setup', 'Kind', 'Tension'];
+  /* Kind first, because it is the one a beginner came here to choose. The
+     thickness sits with the tension, and the method and machine come last. */
+  const CARDS = ['Kind', 'Thickness and tension', 'Method and machine'];
   const cardEls = () => all('#tab-string .card');
 
   const pair = (a, b) => (a === b ? a : a + ' / ' + b);
   function cardSummary(c, i) {
-    if (i === 0) return `${(state.mainGauge || c.sM.gauge).toFixed(2)} mm · `
-      + `${state.method === 'one' ? 'One' : 'Two'} piece`;
-    if (i === 1) return pair(state.kind, state.crossKind);
-    return pair(state.tMain + ' lb', state.tCross + ' lb');
+    if (i === 0) return pair(state.kind, state.crossKind);
+    if (i === 1) return `${(state.mainGauge || c.sM.gauge).toFixed(2)} mm · `
+      + pair(state.tMain + ' lb', state.tCross + ' lb');
+    return `${state.method === 'one' ? 'One' : 'Two'} piece · ${Job.machine(state.machineType).name.split(' ')[0]}`;
   }
 
   function renderDeck(c) {
@@ -641,7 +656,8 @@
      than hunted for in one long list. Every term in Job.TERMS belongs to
      exactly one group. */
   const GLOSS_GROUPS = [
-    ['The racket', ['mains', 'crosses', 'head', 'throat', 'grommet', 'tie-off']],
+    ['The racket', ['mains', 'crosses', 'head', 'throat', 'grommet', 'tie-off', 'skipped holes',
+                    'starting hole', 'anchor']],
     ['Setting up a job', ['one piece', 'two piece', 'gauge', 'M/C', 'split tension', 'hybrid',
                           'stiffness', 'pre-stretch']],
     ['String types', ['polyester', 'multifilament', 'synthetic gut', 'natural gut']],
@@ -1045,8 +1061,10 @@
     });
   }
 
-  /* ---------------- start card + wizard ---------------- */
-  let startOpener = null;
+  /* ---------------- guided setup ----------------
+     Opened from the header button, or from "String another racket". Nothing
+     opens on arrival. */
+  let wizardOpener = null;
   function trapTab(card) {
     return e => {
       if (e.key !== 'Tab') return;
@@ -1058,33 +1076,17 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
   }
-  function showStart(showResume) {
-    const host = el('startCard'), card = host.querySelector('.modal-card');
-    startOpener = document.activeElement;
-    el('startChoose').hidden = false;
-    el('wizard').hidden = true;
-    const p = Job.progress(steps.length ? steps : buildSteps(cache || compute()), state);
-    const resume = !!showResume && Job.hasProgress(state);
-    el('startResume').hidden = !resume;
-    if (resume) el('startResumeText').textContent =
-      `Last viewed: step ${p.stepNo} of ${p.stepCount} · ${p.done} of ${p.total} checks complete.`;
-    host.classList.add('on');
-    if (!host._trapped) { host.addEventListener('keydown', trapTab(card)); host._trapped = true; }
-    if (card.focus) card.focus();
-  }
-  function hideStart() {
-    state.seenStart = true;
-    save();
-    el('startCard').classList.remove('on');
-    if (startOpener && startOpener.focus) startOpener.focus();
-    startOpener = null;
+  function closeWizard() {
+    el('wizardCard').classList.remove('on');
+    if (wizardOpener && wizardOpener.focus) wizardOpener.focus();
+    wizardOpener = null;
   }
   function openWizard() {
-    el('startCard').classList.add('on');
-    el('startChoose').hidden = true;
-    el('wizard').hidden = false;
-    startOpener = startOpener || document.activeElement;
-    Wizard.open(el('wizard'), state, applyWizard, hideStart);
+    const host = el('wizardCard'), card = host.querySelector('.modal-card');
+    wizardOpener = wizardOpener || document.activeElement;
+    host.classList.add('on');
+    if (!host._trapped) { host.addEventListener('keydown', trapTab(card)); host._trapped = true; }
+    Wizard.open(el('wizard'), state, applyWizard, closeWizard);
   }
   function applyWizard(d) {
     /* The guide only asks before throwing away work: a job with ticked checks. */
@@ -1100,9 +1102,9 @@
     state.mainId = state.crossId = idOfKind(state.kind);
     state.mainGauge = state.crossGauge = d.gauge;
     state.tMain = d.tMain; state.tCross = d.tCross;
-    state.linkCross = true; state.linkTension = false;
+    state.linkCross = true; state.linkTension = state.tMain === state.tCross;
     state.step = 0; state.stepOpen = true; state.checked = {}; state.jobStatus = 'active';
-    hideStart();
+    closeWizard();
     mountKnots();
     showTab('do');
   }
@@ -1331,8 +1333,8 @@
       if (x) (x.dataset.export === 'svg' ? saveSvg : savePng)();
     });
 
-    // the setup guide opens straight away; there is no menu in front of it
-    el('btnSetup').addEventListener('click', () => { startOpener = document.activeElement; openWizard(); });
+    // Guided setup opens straight away. There is no menu in front of it.
+    el('btnSetup').addEventListener('click', () => { wizardOpener = document.activeElement; openWizard(); });
 
     /* ---- 1 · your racket ---- */
     const setFrame = apply => {
@@ -1365,6 +1367,12 @@
     el('selHead').addEventListener('change', e => {
       setFrame(() => { state.headSize = e.target.value ? +e.target.value : null; });
     });
+    /* The model is paint only. It is not part of the job, so changing it never
+       asks about the checklist and never moves the step you are on. */
+    el('selModel').addEventListener('change', e => {
+      state.model = modelById(e.target.value) ? e.target.value : null;
+      render(false); mountKnots();
+    });
 
     /* ---- 2 · string ---- */
     /* On one piece the kind card has a single control, so choosing carries you
@@ -1381,7 +1389,7 @@
         if (crossLocked() || wasSame) { state.crossKind = state.kind; state.crossId = state.mainId; }
       })) { render(false); return; }
       render(false); mountKnots();
-      if (crossLocked()) goCard(2);
+      if (crossLocked()) goCard(1);
     });
     el('crossKindSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-kind]'); if (!b || b.disabled) return;
@@ -1390,7 +1398,7 @@
         state.crossId = idOfKind(state.crossKind);
       })) { render(false); return; }
       render(false); mountKnots();
-      goCard(2);
+      goCard(1);
     });
 
     let tenBefore = null;
@@ -1570,20 +1578,12 @@
       selectKnot(next); el('ktab-' + next).focus();
     });
 
-    /* ---- start card ---- */
-    el('startCard').addEventListener('click', e => {
-      const b = e.target.closest('[data-start]'); if (!b) return;
-      const a = b.dataset.start;
-      if (a === 'wizard') openWizard();
-      else if (a === 'direct' || a === 'resume' || a === 'dismiss') hideStart();
-      else if (a === 'fresh') {
-        /* Nothing is cleared yet: backing out of the wizard keeps the job.
-           applyWizard clears the checklist when the new job is confirmed. */
-        openWizard();
-      }
+    /* ---- guided setup ---- */
+    el('wizardCard').addEventListener('click', e => {
+      if (e.target.closest('[data-wz-close]')) closeWizard();
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && el('startCard').classList.contains('on')) hideStart();
+      if (e.key === 'Escape' && el('wizardCard').classList.contains('on')) closeWizard();
     });
   }
 
@@ -1649,7 +1649,8 @@
   /* ---------------- persistence ---------------- */
   function save() { Job.save(state); }
   function restore() {
-    const o = Job.load(DEFAULTS, { strings: STRINGS, patterns: FRAME_PATTERNS, headSizes: HEAD_SIZES, gauges: GAUGES });
+    const o = Job.load(DEFAULTS, { strings: STRINGS, patterns: FRAME_PATTERNS, headSizes: HEAD_SIZES, gauges: GAUGES,
+                                   models: RACKET_MODELS.map(m => m.id) });
     Object.keys(o).forEach(k => (state[k] = o[k]));
     /* The saved KIND is what counts. Older saves named a particular string
        ('alu', 'nxt' and so on) that is no longer in the catalogue, so the
@@ -1671,5 +1672,5 @@
   showSub(state.sub);
   showTab(state.tab);
   /* No pop-up on arrival: the numbered tabs show where to start, and the
-     setup guide is one click away in the header. */
+     Guided setup is one click away in the header. */
 })();

@@ -17,8 +17,11 @@ const Job = (function () {
      to three and a saved card index means something different.
      4: the guide went from nine steps to eight.
      5: the racket list went. A save names a pattern, hole sets and head size
-     instead of a racket id. */
-  const VERSION = 5;
+     instead of a racket id.
+     6: the String deck became Kind, Thickness and tension, Method and machine,
+     and the Your racket deck gained a Model card in front. A save also names
+     the model, which only colors the drawing. */
+  const VERSION = 6;
 
   /* What every frame in the old racket list was, as [pattern, throat sets,
      head size]. Kept only so a save from before version 5 comes back as the
@@ -170,11 +173,14 @@ const Job = (function () {
   const TERMS = {
     mains:   'The strings that run up and down the racket, along its length.',
     crosses: 'The strings that run side to side, woven through the mains.',
-    gauge:   'The thickness of the string, usually measured in millimetres. Thinner strings generally provide more feel, bite on the ball, and spin potential, but break more easily. Thicker strings are more durable and usually feel slightly firmer and more controlled.',
+    gauge:   'The thickness of the string, usually measured in millimeters. Thinner strings generally provide more feel, bite on the ball, and spin potential, but break more easily. Thicker strings are more durable and usually feel slightly firmer and more controlled.',
     throat:  'The end of the hoop where the frame narrows into the handle.',
     head:    'The end of the hoop furthest from the handle.',
     grommet: 'The plastic sleeve in each hole that the string passes through, so it does not chafe on the frame.',
     'tie-off': 'The hole where a run of string is knotted off. Many frames mark these, and they are often a little larger.',
+    'skipped holes': 'Holes the mains pass by because the frame keeps them for the crosses. The string runs along the outside of the frame past them. Check which ones they are on your own frame.',
+    'starting hole': 'The hole where a two piece cross string is knotted on before the first cross. It sits next to the first cross hole, and many frames make it a little larger.',
+    anchor: 'The string a knot is tied around. It is a string that is already in the hole, usually a tensioned main.',
     hybrid:  'Two different kinds of string in one racket, one in the mains and another in the crosses. It has to be strung two piece, with two separate lengths of string.',
     /* Words the interface uses without explaining them. Each is one line,
        shown only when asked for, so the bench stays as quiet as it was. */
@@ -186,7 +192,7 @@ const Job = (function () {
        which is where the pace comes from. Saying it is powerful on its own
        would send a beginner to the one string that will not help them. */
     polyester: 'The most common string type in competitive tennis. Stiff and relatively low-powered, which lets players swing aggressively while keeping the ball under control. Its ability to slide and snap back also gives it excellent spin potential. Resistant to breaking, but it loses tension and playability faster than most other string types and can be demanding on the arm.',
-    multifilament: 'Made from many fine fibres bonded together to mimic some of the feel and elasticity of natural gut. Soft, comfortable, and relatively powerful, with good tension maintenance. Easier on the arm than polyester, but generally less durable and more prone to fraying.',
+    multifilament: 'Made from many fine fibers bonded together to mimic some of the feel and elasticity of natural gut. Soft, comfortable, and relatively powerful, with good tension maintenance. Easier on the arm than polyester, but generally less durable and more prone to fraying.',
     /* Third of the four on stiffness, above natural gut and the multis, so the
        comparisons here run in that order -- softer than a poly, firmer than a
        multi or gut. Reversing them would contradict the bench's feel estimate. */
@@ -208,7 +214,7 @@ const Job = (function () {
     'fixed clamps': 'Clamps mounted on the machine that hold each string against the machine itself. They slip less and lose less tension than flying clamps.',
     'flying clamps': 'Loose clamps that grip a string against the string next to it. They are cheap and work, but they can slip and lose a little tension.',
     'pre-stretch': 'Pulling a string past its tension before stringing, or letting the machine do it, so it settles in faster and loses less tension later.',
-    'natural gut': 'Made from natural fibres taken from cow intestine. Extremely elastic, comfortable, and powerful, with excellent feel and the best tension maintenance of the major string types. It is also the most expensive and generally less resistant to moisture and abrasion than synthetic strings.'
+    'natural gut': 'Made from natural fibers taken from cow intestine. Extremely elastic, comfortable, and powerful, with excellent feel and the best tension maintenance of the major string types. It is also the most expensive and generally less resistant to moisture and abrasion than synthetic strings.'
   };
 
   /* Machine definitions, one sentence each. */
@@ -257,9 +263,9 @@ const Job = (function () {
   /* Versioned, and every field is checked on the way back in. A saved value
      that no longer makes sense -- a pattern that was removed, a hand-edited number -- is dropped, never trusted, and
      never allowed to stop the page loading. */
-  const SAVED = ['v', 'tab', 'sub', 'knot', 'primerDone', 'card', 'rCard', 'sideCard', 'seenStart', 'mode', 'machineType', 'jobStatus',
+  const SAVED = ['v', 'tab', 'sub', 'knot', 'primerDone', 'card', 'rCard', 'sideCard', 'mode', 'machineType', 'jobStatus',
                  'purpose', 'kind', 'crossKind',
-                 'pattern', 'throatPairs', 'headSize', 'mainId', 'crossId',
+                 'pattern', 'throatPairs', 'headSize', 'model', 'mainId', 'crossId',
                  'mainGauge', 'crossGauge', 'tMain', 'tCross', 'linkCross', 'linkTension', 'method',
                  'step', 'stepOpen', 'checked'];
 
@@ -289,7 +295,7 @@ const Job = (function () {
     let o;
     try { o = readRaw(); } catch (e) { return state; }
     if (!o) return state;
-    const { strings, patterns, headSizes, gauges } = catalogue;
+    const { strings, patterns, headSizes, gauges, models } = catalogue;
     const take = (k, ok) => { if (ok(o[k])) state[k] = o[k]; };
 
     /* Before version 5 a save named a racket from the list, and its pattern
@@ -300,11 +306,15 @@ const Job = (function () {
       if (typeof o.racketId === 'string') {
         const f = OLD_RACKETS[o.racketId] || OLD_FALLBACK;
         o.pattern = f[0]; o.throatPairs = f[1]; o.headSize = f[2];
+        /* and the colors it was drawn in, which is all a model sets now */
+        const om = typeof OLD_RACKET_MODEL === 'object' ? OLD_RACKET_MODEL[o.racketId] : null;
+        if (om) o.model = om;
       }
     }
     take('pattern',     v => patterns.includes(v));
     take('throatPairs', v => v === 3 || v === 4);
     take('headSize',    v => v === null || (headSizes || []).includes(v));
+    take('model',       v => v === null || (models || []).includes(v));
     take('mainId',   v => strings.some(s => s.id === v));
     take('crossId',  v => strings.some(s => s.id === v));
     take('mainGauge',  v => gauges.includes(v));
@@ -328,13 +338,21 @@ const Job = (function () {
     const oldDeck = !(o.v >= 3);
     take('card', v => Number.isInteger(v) && v >= 0 && v <= (oldDeck ? 3 : 2));
     if (oldDeck && Number.isInteger(state.card)) state.card = [0, 1, 1, 2][state.card];
-    take('rCard', v => Number.isInteger(v) && v >= 0 && v <= 2);
+    /* Version 6 reordered the deck to Kind, Thickness and tension, Method and
+       machine. Setup held the thickness, method and machine, so it lands on
+       the last card, Kind moves to the front and Tension takes the middle. */
+    const tookCard = Number.isInteger(o.card) && o.card >= 0 && o.card <= (oldDeck ? 3 : 2);
+    if (!(o.v >= 6) && tookCard) state.card = [2, 0, 1][state.card];
+    /* and the Your racket deck gained Model in front, so every old card moves
+       up one */
+    const oldRack = !(o.v >= 6);
+    take('rCard', v => Number.isInteger(v) && v >= 0 && v <= (oldRack ? 2 : 3));
+    if (oldRack && Number.isInteger(o.rCard) && o.rCard >= 0 && o.rCard <= 2) state.rCard = o.rCard + 1;
     take('mode', v => v === 'real' || v === 'sandbox');
     take('machineType', v => MACHINES.some(m => m.id === v));
     take('jobStatus', v => ['setup', 'active', 'complete'].includes(v));
     take('sideCard', v => ['racket', 'strings', 'job'].includes(v));
     take('purpose', v => PURPOSES.some(p => p.id === v));
-    take('seenStart', v => typeof v === 'boolean');
     /* Before version 4 the guide had nine steps, the fifth being the method.
        It folded into the measuring step, so later steps move down by one and
        the place and ticks of an old save still land on the same step. */

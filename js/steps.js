@@ -123,8 +123,8 @@ const Steps = (function () {
        prefer crosses head to throat, so say so on that path only. */
     /* On a one piece the frame decides this: the crosses start wherever the
        long side's last main comes out. Bottom-up crosses are normal on a one
-       piece (Wilson's own sheets start them at the throat), so this only says
-       that top down is preferred where the frame allows it. */
+       piece (makers' own stringing sheets do it), so this only says that top
+       down is preferred where the frame allows it. */
     const upNote = 'On this frame a one piece runs the crosses from the throat up. That is normal and many makers’ own instructions do it. Top down is preferred when the frame allows it, and two piece always does.';
     /* The one-piece line in the method step describes that method whichever
        one is selected, so it gets its own plan. */
@@ -221,7 +221,9 @@ const Steps = (function () {
                 ['Contact', 'frame only']],
         actions: [
           `Put the racket in the mount with the <b>head at 12 o'clock</b>.`,
-          `Tighten the supports. Make sure the frame is stable and does not rock.`
+          `Tighten the supports. Make sure the frame is stable and does not rock.`,
+          `<b>Cut out the old strings</b>, if there are any. Cut the mains and crosses together, starting in
+           the center and working outward, so the frame unloads evenly. Wear your eye protection.`
         ],
         watch: `Be careful not to overtighten.`,
         detail: `<p>A frame that rocks will shift on the first pull. Then everything you string after that is
@@ -233,11 +235,10 @@ const Steps = (function () {
     const cut = Fmt.cutPair(stats.mainM, stats.crossM);
     const cutM = Fmt.cutFor(stats, onePiece);
     const spare = Fmt.round1(setM - cutM);
-    const m1 = v => Fmt.round1(v).toFixed(1);
     const tieLink = label =>
       `<button type="button" class="linkbtn inline-link" data-goto="knot" data-knot="finish">${label}</button>`;
     const MEASURE_TIP = `A handy way to measure: use your wingspan or your racket.`;
-    const bothR = v => `<b>${Fmt.metresOnly(v)}</b> (${Fmt.feet(v)})`;
+    const bothR = v => `<b>${Fmt.metres(v)}</b>`;
     /* A hybrid takes each plane from a different string, so there is no set to halve */
     const hybrid = mainString.id !== crossString.id;
     const mainKind = (mainString.type || mainString.name).toLowerCase();
@@ -248,22 +249,21 @@ const Steps = (function () {
       id: 'measure', stage: 'empty', title: 'Measure your string',
       body: layout({
         specs: [['Method', `${onePiece ? 'One piece' : 'Two piece'}, ${onePiece ? 2 : 4} knots`],
-                ['Cut length', Fmt.metresOnly(cutM)],
-                ['Set spare', `${m1(spare)} m`]],
+                ['Cut length', Fmt.metres(cutM)],
+                ['Left over from a 12.2 m set', Fmt.metres(spare)]],
         /* The method used to be a step of its own, after the cut. It decides
            the cut, so it is stated here, where the string is measured. */
         intro: `<p class="step-note">${onePiece
             ? 'One piece: one string does the mains and the crosses, with no starting knot.'
             : 'Two piece: one length for the mains and one for the crosses.'}
           Chosen on the String tab.${onePiece && mainString.id !== crossString.id
-            ? ' <b>A hybrid needs two piece</b>, so change it there before you cut.' : ''}${onePiece && crossUp
-            ? ` ${upNote}` : ''}</p>`,
+            ? ' <b>A hybrid needs two piece</b>, so change it there before you cut.' : ''}</p>`,
         actions: onePiece ? [
           `<b>Using a packaged set?</b> Open it and use all of the string. Do not trim it first.
-           This job leaves about <b>${m1(spare)} m</b> over.`,
-          `<b>Cutting from a reel?</b> Measure <b>${Fmt.metresOnly(cutM)}</b> (${Fmt.feet(cutM)}).`,
+           This job leaves about ${bothR(spare)} over.`,
+          `<b>Cutting from a reel?</b> Measure ${bothR(cutM)}.`,
           `Mark the split before you thread anything. Pull the string off-center until roughly
-           <b>${m1(oneShort)} m</b> hangs on one side and the rest on the other. Keep it continuous,
+           ${bothR(oneShort)} hangs on one side and the rest on the other. Keep it continuous,
            do not cut it into separate mains and cross pieces.`,
           MEASURE_TIP
         ] : hybrid ? [
@@ -274,9 +274,14 @@ const Steps = (function () {
           ...(hasGut ? [`Natural gut: don't kink it or grip it with pliers.`] : []),
           MEASURE_TIP
         ] : [
-          /* A set is halved on every frame, as the owner chose and as makers do
-             (Wilson's own Blade 18x20 sheet uses 20 ft mains from a 40 ft set). */
-          `<b>Using a packaged set?</b> Cut it into <b>two equal halves</b>, one for the mains and one for
+          /* A set is halved when half covers the mains. Dense frames (18 mains)
+             need a little more than half, so the mains piece is cut first and
+             the crosses take the rest. */
+          cut.mains > setM / 2
+            ? `<b>Using a packaged set?</b> Cut ${bothR(cut.mains)} for the mains and use the rest, about
+               ${bothR(Fmt.round1(setM - cut.mains))}, for the crosses. This frame needs a little more than half
+               for the mains.`
+            : `<b>Using a packaged set?</b> Cut it into <b>two equal halves</b>, one for the mains and one for
            the crosses.`,
           `<b>Cutting from a reel?</b> Cut ${bothR(cut.mains)} for the mains and ${bothR(cut.crosses)} for
            the crosses.`,
@@ -336,8 +341,12 @@ const Steps = (function () {
         specs: [['Feed from', pl.mainsStart], ['Loose ends at', pl.firstMainEnd], ['Tension', `${tMain} lb`]],
         actions: [
           onePiece
-            ? `Thread the center pair and leave about <b>${Fmt.metresOnly(oneShort)}</b> on the short side.`
-            : `Thread the center pair and even the lengths.`
+            ? `<b>Thread the center pair.</b> Find the split you marked. Push one end through each of the two
+               center holes at the ${pl.mainsStart}, so the mark sits against the outside of the frame and about
+               ${bothR(oneShort)} hangs on the short side.`
+            : `<b>Thread the center pair.</b> Fold the mains piece in half. Push one end through each of the two
+               center holes at the ${pl.mainsStart}, so the fold sits against the outside of the frame. Pull the
+               ends even.`
         ],
         extra: `<h4 class="step-sh">Walk it through</h4>
           <p class="hint beat-hint"><button type="button" class="btn ghost play-btn" data-beat="play">
@@ -353,14 +362,14 @@ const Steps = (function () {
             <button class="cycle-card" data-beat="4"><span>4</span><b>Clamp</b>
               <em>Clamp the right one at the ${pl.firstMainEnd}.</em></button>
             <button class="cycle-card" data-beat="5"><span>5</span><b>Tension</b>
-              <em>Pull the left one at the ${pl.firstMainEnd}, to ${tMain} lb.</em></button>
+              <em>Take off the clamp from card 2, then pull the left one at the ${pl.firstMainEnd}, to ${tMain} lb.</em></button>
             <button class="cycle-card" data-beat="6"><span>6</span><b>Clamp</b>
-              <em>Clamp the left one, then take off the clamp from card 2. Both are now at tension.</em></button>
+              <em>Clamp the left one at the ${pl.firstMainEnd}. Both are now at tension.</em></button>
           </div>`,
         jump: `<button class="linkbtn" data-goto="tension">When to clamp on each machine</button>`
       }),
       checks: [onePiece
-                 ? `Center pair threaded, short side about ${Fmt.metresOnly(oneShort)}`
+                 ? `Center pair threaded, short side about ${Fmt.metres(oneShort)}`
                  : 'Center pair threaded and evened up',
                'Both center mains at tension and clamped']
     });
@@ -412,8 +421,9 @@ const Steps = (function () {
                next to the first cross. Then run the string along the outside of the frame into the first cross hole.`,
           `Weave each cross over one main and under the next, all the way across. Pull the whole length
            through before you tension it.`,
-          `Tension it, then clamp close to the frame.`,
-          `Straighten that cross with your fingers before moving on.`,
+          `Tension it, then clamp close to the frame. Straighten that cross with your fingers before moving on.`,
+          `Start each new cross the opposite way to the last one. If it went <b>over</b> the first main, this
+           one goes <b>under</b>.`,
           `Tie off the final cross at the ${crossEndEnd} with the <span class="nobr">${tieLink('finishing tie-off')}.</span> Keep the
            clamp on until the knot is pulled tight.`
         ],
@@ -436,7 +446,7 @@ const Steps = (function () {
     steps.push({
       id: 'finish', stage: 'done', title: 'Finish and check',
       body: layout({
-        specs: [['In the bed', `≈ ${Fmt.metresOnly(stats.totalM)}`], ['Knots', onePiece ? 2 : 4]],
+        specs: [['In the bed', `≈ ${Fmt.metres(stats.totalM)}`], ['Knots', onePiece ? 2 : 4]],
         intro: done
           ? `<p class="done-banner"><b>Congratulations, the racket is strung.</b>
              ${pat}, ${mainWords} at ${tMain} lb${!sameString || tMain !== tCross

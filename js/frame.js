@@ -11,9 +11,13 @@
  *   headSize     square inches. Optional, and only the drawing and the string
  *                length follow it. Not sure means a typical 98.
  *
+ * A fourth, the model, is optional and only changes the look: the paint and
+ * the hoop's proportions (models.js). It never sets any of the three above.
+ *
  * makeFrame() turns those into the object the rest of the app reads
- * (geometry.js, racketSvg.js, steps.js, throat.js): a generic hoop from a
- * typical 98 sq in frame, scaled to the head size, in one neutral colourway.
+ * (geometry.js, racketSvg.js, steps.js, throat.js): the model's hoop, or a
+ * generic one from a typical 98 sq in frame, scaled to the head size, in the
+ * model's colors or one neutral colorway.
  * geometry.js scales the superellipse to enclose exactly headSize, so the
  * drawing and every number measured off it agree.
  */
@@ -49,12 +53,20 @@ function makeFrame(o) {
   const headSize = HEAD_SIZES.indexOf(p.headSize) >= 0 ? p.headSize : DEFAULT_HEAD;
   // a typical 98: 248 x 318 mm inside the hoop. Scaled by the square root of
   // the area, so the shape stays the same and only the size moves.
-  const k = Math.sqrt(headSize / 98);
+  const model = typeof modelById === 'function' && p.model ? modelById(p.model) : null;
+  /* The model's own hoop proportions when one is picked, the generic 98
+     otherwise. Either way the user's head size sets the size, by the square
+     root of the area, so the shape stays the model's and only the size moves. */
+  const sh = model && model.shape
+    ? model.shape : { width: 248, length: 318, at: 98, shapeN: 2.38, headBias: 0.52 };
+  const k = Math.sqrt(headSize / sh.at);
   return {
     pattern: pattern, throatPairs: throatPairs, headSize: headSize,
-    headWidth: 248 * k, headLength: 318 * k, shapeN: 2.38, headBias: 0.52,
+    headWidth: sh.width * k, headLength: sh.length * k, shapeN: sh.shapeN, headBias: sh.headBias,
     mainSpan: 0.86, crossTop: 0.885, crossBottom: 0.845,
     beamMm: 22,
-    theme: NEUTRAL_THEME
+    /* the model, if one was picked, only repaints the frame */
+    model: model ? model.id : null,
+    theme: model ? Object.assign({}, NEUTRAL_THEME, model.theme) : NEUTRAL_THEME
   };
 }

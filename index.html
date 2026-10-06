@@ -22,8 +22,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=104">
-<link rel="stylesheet" href="tension.css?v=104">
+<link rel="stylesheet" href="styles.css?v=107">
+<link rel="stylesheet" href="tension.css?v=107">
 </head>
 <body>
 <div class="app" id="app">
@@ -48,7 +48,7 @@
 
     <div class="top-actions">
       <a class="top-link" href="about.html">About</a>
-      <button type="button" class="btn ghost" id="btnSetup">Setup guide</button>
+      <button type="button" class="btn ghost" id="btnSetup">Guided setup</button>
     </div>
   </header>
 
@@ -68,6 +68,13 @@
           </header>
 
           <nav class="deck-nav" id="rDeckNav" role="tablist" aria-label="Your racket"></nav>
+
+          <section class="fieldset card rcard" hidden>
+            <h2>Model <em class="opt">Optional</em></h2>
+            <label class="field head-field"><span class="sr-only">Model</span>
+              <select id="selModel"></select></label>
+            <p class="help">Changes the drawings&rsquo; look. Pick your pattern next.</p>
+          </section>
 
           <section class="fieldset card rcard" hidden>
             <h2>String pattern</h2>
@@ -111,27 +118,10 @@
       <div class="layout">
         <div class="controls">
           <header class="screen-h">
-            <h1>Which string?</h1>
+            <h1>String and setup</h1>
           </header>
 
           <nav class="deck-nav" id="deckNav" role="tablist" aria-label="String setup"></nav>
-
-          <section class="fieldset card" hidden>
-            <h2>Setup</h2>
-            <div class="grid-3">
-              <label class="field"><span>Thickness</span><select id="selGauge"></select></label>
-              <div class="field"><span>Method</span>
-                <div class="seg" id="methodSeg" role="radiogroup" aria-label="Method">
-                  <button type="button" data-m="one" role="radio" aria-checked="false">One piece</button>
-                  <button type="button" data-m="two" role="radio" aria-checked="true">Two piece</button>
-                </div>
-              </div>
-              <div class="field"><span>Machine</span>
-                <div class="seg" id="machineSeg" role="radiogroup" aria-label="Machine"></div>
-              </div>
-            </div>
-            <p class="help" id="setupHelp"></p>
-          </section>
 
           <section class="fieldset card" hidden>
             <h2>Kind of string</h2>
@@ -148,7 +138,8 @@
           </section>
 
           <section class="fieldset card" hidden>
-            <h2>Tension</h2>
+            <h2>Thickness and tension</h2>
+            <label class="field gauge-field"><span>Thickness</span><select id="selGauge"></select></label>
             <p class="ten-range" id="tenRange"></p>
             <div class="ten-grid">
               <label class="ten-cell"><span id="tMainLab">Mains and crosses</span>
@@ -163,6 +154,23 @@
             <p class="help warn" id="tenWarn" role="status" hidden></p>
             <p class="ten-tip">Some people string the crosses 2 to 3 lb looser than the mains. Crosses are shorter
               than mains, so this evens out the stringbed and adds a little launch, comfort, and spin.</p>
+          </section>
+
+          <section class="fieldset card" hidden>
+            <h2>Method and machine</h2>
+            <div class="stack-fields">
+              <div class="field"><span>Method</span>
+                <div class="seg" id="methodSeg" role="radiogroup" aria-label="Method">
+                  <button type="button" data-m="one" role="radio" aria-checked="false">One piece</button>
+                  <button type="button" data-m="two" role="radio" aria-checked="true">Two piece</button>
+                </div>
+                <p class="help method-hint">Not sure? Two piece is the usual first job.</p>
+              </div>
+              <div class="field"><span>Machine</span>
+                <div class="seg" id="machineSeg" role="radiogroup" aria-label="Machine"></div>
+              </div>
+            </div>
+            <p class="help" id="setupHelp"></p>
           </section>
 
           <div class="deck-foot">
@@ -298,7 +306,7 @@
               <div class="tn-dg tn-good">
                 <p class="tn-verdict"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4,10.5 l4,4 l8,-9"/></svg>Close to the frame</p>
                 <svg class="tn-svg" viewBox="0 0 360 120" role="img"
-                    aria-label="Close to the frame: the clamp is a few millimetres from the frame.">
+                    aria-label="Close to the frame: the clamp is a few millimeters from the frame.">
                   <text x="237" y="13" class="tn-s" text-anchor="middle" fill="var(--muted)">frame</text>
                   <rect x="230" y="20" width="15" height="92" rx="3" fill="#3a4049"/>
                   <rect x="230" y="20" width="3" height="92" fill="#59616c"/>
@@ -462,52 +470,36 @@
     measurements. Check the tie-off and skipped holes on your own frame.</span>
     <span class="foot-links"><a href="about.html">About</a>
     <a href="https://github.com/albertshi31/stringbed/issues" target="_blank" rel="noopener">Feedback</a></span>
+    <span class="foot-copy">&copy; 2026 Stringbed. All rights reserved.</span>
   </footer>
 
-  <!-- first-run entry -->
-  <div class="modal" id="startCard">
-    <div class="modal-back" data-start="dismiss"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="startTitle" tabindex="-1">
-      <button class="modal-x" type="button" data-start="dismiss" aria-label="Close">&times;</button>
-      <div id="startChoose">
-        <h2 id="startTitle">Starting a racket?</h2>
-        <div class="start-opts">
-          <button type="button" class="start-opt" data-start="wizard">
-            <b>Guide me through my first job</b>
-            <span>A few quick questions, then straight into the steps.</span></button>
-          <button type="button" class="start-opt" data-start="direct">
-            <b>I know my setup</b>
-            <span>Go straight to the bench.</span></button>
-        </div>
-        <div class="start-resume" id="startResume" hidden>
-          <p id="startResumeText"></p>
-          <div class="cta-row">
-            <button type="button" class="btn primary" data-start="resume">Resume</button>
-            <button type="button" class="btn ghost" data-start="fresh">Start a new job</button>
-          </div>
-        </div>
-      </div>
-      <div class="wizard" id="wizard" hidden></div>
+  <!-- guided setup: opened from the header, never on arrival -->
+  <div class="modal" id="wizardCard">
+    <div class="modal-back" data-wz-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Guided setup" tabindex="-1">
+      <button class="modal-x" type="button" data-wz-close aria-label="Close">&times;</button>
+      <div class="wizard" id="wizard"></div>
     </div>
   </div>
 
   <div class="modal" id="throatModal"></div>
 </div>
 
-<script src="js/fmt.js?v=104"></script>
-<script src="js/frame.js?v=104"></script>
-<script src="js/strings.js?v=104"></script>
-<script src="js/geometry.js?v=104"></script>
-<script src="js/racketSvg.js?v=104"></script>
-<script src="js/steps.js?v=104"></script>
-<script src="js/throat.js?v=104"></script>
-<script src="js/knot.js?v=104"></script>
-<script src="js/startKnot.js?v=104"></script>
-<script src="js/machines.js?v=104"></script>
-<script src="js/job.js?v=104"></script>
-<script src="js/wizard.js?v=104"></script>
-<script src="js/holes.js?v=104"></script>
-<script src="js/weaveQuiz.js?v=104"></script>
-<script src="js/app.js?v=104"></script>
+<script src="js/fmt.js?v=107"></script>
+<script src="js/models.js?v=107"></script>
+<script src="js/frame.js?v=107"></script>
+<script src="js/strings.js?v=107"></script>
+<script src="js/geometry.js?v=107"></script>
+<script src="js/racketSvg.js?v=107"></script>
+<script src="js/steps.js?v=107"></script>
+<script src="js/throat.js?v=107"></script>
+<script src="js/knot.js?v=107"></script>
+<script src="js/startKnot.js?v=107"></script>
+<script src="js/machines.js?v=107"></script>
+<script src="js/job.js?v=107"></script>
+<script src="js/wizard.js?v=107"></script>
+<script src="js/holes.js?v=107"></script>
+<script src="js/weaveQuiz.js?v=107"></script>
+<script src="js/app.js?v=107"></script>
 </body>
 </html>
