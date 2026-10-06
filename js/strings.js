@@ -29,3 +29,10 @@ const STRINGS = [
 STRINGS.forEach(s => { s.color = s.colors[0].hex; });
 
 const GAUGES = [1.15, 1.20, 1.25, 1.30, 1.35];
+
+/* The gauge NUMBER a package prints for each thickness the app offers. Makers
+   round differently, so these are the usual matches: 15L about 1.35 mm, 16
+   about 1.30, 16L about 1.25 to 1.28, 17 about 1.20 to 1.24, 18 about 1.10 to
+   1.15. */
+const GAUGE_NAMES = { 1.15: '18', 1.2: '17', 1.25: '16L', 1.3: '16', 1.35: '15L' };
+const gaugeLabel = g => `${g.toFixed(2)} mm` + (GAUGE_NAMES[g] ? ` (${GAUGE_NAMES[g]})` : '');

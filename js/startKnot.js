@@ -175,7 +175,7 @@ const StartKnot = (function () {
         stroke="#59616c" stroke-width="0.9"/>
       <text x="194" y="${WALL + 13}" text-anchor="end" font-size="8.5"
         font-family="Inter,Helvetica,Arial,sans-serif" font-weight="600"
-        fill="#aeb6c2">tie-off grommet</text>
+        fill="#aeb6c2">starting hole</text>
       <text x="194" y="${WALL + 24}" text-anchor="end" font-size="8.5"
         font-family="Inter,Helvetica,Arial,sans-serif"
         fill="#8f9aa7">both strings come up through it</text>`;

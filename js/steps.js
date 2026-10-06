@@ -178,7 +178,7 @@ const Steps = (function () {
     const layout = o => `
       ${o.specs && o.specs.filter(Boolean).length
         ? `<ul class="spec-strip">${o.specs.filter(Boolean)
-            .map(([k, v]) => `<li><em>${k}</em><b>${v}</b></li>`).join('')}</ul>` : ''}
+            .map(([k, v, cls]) => `<li${cls ? ` class="${cls}"` : ''}><em>${k}</em><b>${v}</b></li>`).join('')}</ul>` : ''}
       ${o.intro || ''}
       ${o.actions ? `<h4 class="step-sh">${o.actionsLabel || 'Do this'}</h4>
         <ol class="do-this">${o.actions.filter(Boolean).map(x => `<li>${x}</li>`).join('')}</ol>` : ''}
@@ -204,7 +204,7 @@ const Steps = (function () {
                   + (gMain === gCross ? `${gMain.toFixed(2)} mm` : `${gMain.toFixed(2)} and ${gCross.toFixed(2)} mm`)]],
         actions: [
           `<b>String cutters</b>`,
-          `<b>Needlenose pliers</b>, for pulling knots tight and easing string through a tight
+          `<b>Needle-nose pliers</b>, for pulling knots tight and easing string through a tight
            ${g('grommet')}.`,
           `<b>Measurement tool</b>, like a ruler or measuring tape.`,
           `<b>Eye protection</b>, for cutting out old strings. Polyester can snap back hard.`
@@ -235,6 +235,9 @@ const Steps = (function () {
     const cut = Fmt.cutPair(stats.mainM, stats.crossM);
     const cutM = Fmt.cutFor(stats, onePiece);
     const spare = Fmt.round1(setM - cutM);
+    /* the cut was brought back inside one set because the full allowance would not fit */
+    const trimmed = Fmt.cutTrimmed(stats, onePiece);
+    const TRIM = trimmed ? ', trimmed to fit one 12.2 m set' : '';
     const tieLink = label =>
       `<button type="button" class="linkbtn inline-link" data-goto="knot" data-knot="finish">${label}</button>`;
     const MEASURE_TIP = `A handy way to measure: use your wingspan or your racket.`;
@@ -250,7 +253,7 @@ const Steps = (function () {
       body: layout({
         specs: [['Method', `${onePiece ? 'One piece' : 'Two piece'}, ${onePiece ? 2 : 4} knots`],
                 ['Cut length', Fmt.metres(cutM)],
-                ['Left over from a 12.2 m set', Fmt.metres(spare)]],
+                ['Spare from a set', spare > 0 ? Fmt.metres(spare) : 'None. This frame uses the whole set.', 'spec-wide']],
         /* The method used to be a step of its own, after the cut. It decides
            the cut, so it is stated here, where the string is measured. */
         intro: `<p class="step-note">${onePiece
@@ -261,7 +264,7 @@ const Steps = (function () {
         actions: onePiece ? [
           `<b>Using a packaged set?</b> Open it and use all of the string. Do not trim it first.
            This job leaves about ${bothR(spare)} over.`,
-          `<b>Cutting from a reel?</b> Measure ${bothR(cutM)}.`,
+          `<b>Cutting from a reel?</b> Measure ${bothR(cutM)}${TRIM}.`,
           `Mark the split before you thread anything. Pull the string off-center until roughly
            ${bothR(oneShort)} hangs on one side and the rest on the other. Keep it continuous,
            do not cut it into separate mains and cross pieces.`,
@@ -284,7 +287,7 @@ const Steps = (function () {
             : `<b>Using a packaged set?</b> Cut it into <b>two equal halves</b>, one for the mains and one for
            the crosses.`,
           `<b>Cutting from a reel?</b> Cut ${bothR(cut.mains)} for the mains and ${bothR(cut.crosses)} for
-           the crosses.`,
+           the crosses${TRIM}.`,
           ...(hasGut ? [`Natural gut: don't kink it or grip it with pliers.`] : []),
           MEASURE_TIP
         ],
@@ -293,13 +296,21 @@ const Steps = (function () {
             <tr><th>${nM} ${g('mains')}</th><td>≈ ${bothR(stats.mainM)}</td></tr>
             <tr><th>${nC} ${g('crosses')}</th><td>≈ ${bothR(stats.crossM)}</td></tr>
             <tr><th>Estimated string in the bed</th><td>≈ ${bothR(stats.totalM)}</td></tr>
-            <tr class="cut-row"><th>Recommended cut length</th><td>${bothR(cutM)}</td></tr>
+            <tr class="cut-row"><th>Recommended cut length${trimmed ? ' <em class="trim-note">trimmed to fit one 12.2 m set</em>' : ''}</th><td>${bothR(cutM)}</td></tr>
           </table>
 `
       }),
       checks: [onePiece ? 'String measured and the split marked' : 'String measured and cut into two lengths']
     });
 
+
+    /* Why the mains finish where they do, from the count on each side. The
+       string changes end on every main, so an even count brings it back to the
+       end it started from and an odd count leaves it at the other one. */
+    const perSide = nM / 2;
+    const parityWhy = perSide % 2 === 0
+      ? `Each side has ${perSide} mains, an even number, so the string ends up back at the ${pl.mainsStart}, where it started.`
+      : `Each side has ${perSide} mains, an odd number, so the string ends up at the other end, the ${pl.mainsEnd}.`;
 
     steps.push({
       id: 'throat', stage: 'empty', title: `Check the throat: ${throatPairs} sets`,
@@ -310,7 +321,7 @@ const Steps = (function () {
           `Just above the ${g('throat')}, count the <b>sets of main holes</b> again. A set is one pair of
            holes, one on each side of the center line.`,
           `You said <b>${throatPairs} sets</b>, so the mains start at the <b>${pl.mainsStart}</b> and
-           finish at the <b>${pl.mainsEnd}</b>.`,
+           finish at the <b>${pl.mainsEnd}</b>. ${parityWhy}`,
           `Counted ${throatPairs === 3 ? 4 : 3} instead? Change it on the
            <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="racket">Your racket</button></span>
            tab before you thread anything.`
@@ -365,7 +376,8 @@ const Steps = (function () {
               <em>Take off the clamp from card 2, then pull the left one at the ${pl.firstMainEnd}, to ${tMain} lb.</em></button>
             <button class="cycle-card" data-beat="6"><span>6</span><b>Clamp</b>
               <em>Clamp the left one at the ${pl.firstMainEnd}. Both are now at tension.</em></button>
-          </div>`,
+          </div>
+          <p class="step-tip flying-tip"><b>Flying clamps?</b> Clamp the two center mains together, or use a starting clamp.</p>`,
         jump: `<button class="linkbtn" data-goto="tension">When to clamp on each machine</button>`
       }),
       checks: [onePiece
@@ -384,7 +396,8 @@ const Steps = (function () {
            Skip any hole your frame keeps for the crosses.`,
           `<b>Tension.</b> Pull that main to ${tMain} lb.`,
           `<b>Clamp.</b> Clamp it close to the ${g('grommet')}, without touching the frame. Only let the
-           machine go once the clamp is on and holding the tension.`,
+           machine go once the clamp is on and holding the tension. With ${g('flying clamps')}, clamp the new
+           main together with the one next to it.`,
           `<b>Repeat</b> thread, tension, clamp, <b>alternating sides</b>, so neither side gets more than one
            main ahead. Keep going until the last main on each side.`,
           onePiece
@@ -401,7 +414,7 @@ const Steps = (function () {
           <p>String: <b>${mainString.name}</b> ${gMain.toFixed(2)} mm &middot; main spacing
             ${stats.mainGap.toFixed(1)} mm.</p>`
       }),
-      checks: ['Center mains in and symmetric', 'Skipped holes verified against the frame',
+      checks: ['Mains even on both sides', 'Skipped holes verified against the frame',
                onePiece
                  ? `Short-side main tied off at the ${pl.mainsEnd}, long side left free for the crosses`
                  : `Mains tied off at the marked ${pl.mainsEnd} holes`]

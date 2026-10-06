@@ -46,7 +46,7 @@ const MachineGuide = (function () {
     },
     {
       id: 'electric',
-      name: 'Electronic constant-pull',
+      name: 'Electronic (constant pull)',
       price: '$800 to $6,000+',
       job: 'electronic',
       how: 'A motor holds the tension for you. It is the fastest, and it depends the least on your technique.',

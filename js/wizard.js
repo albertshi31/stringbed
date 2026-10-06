@@ -8,7 +8,7 @@
 const Wizard = (function () {
 
   const el = id => document.getElementById(id);
-  let host, draft, onDone, onCancel, stepIx = 0;
+  let host, draft, onDone, onCancel, onCount, stepIx = 0;
 
   /* Purpose is always 'practice' and the method always two piece. Both are
      still sent on Start so the app's handler gets the fields it reads. */
@@ -54,7 +54,12 @@ const Wizard = (function () {
           <p class="hint">Printed on the frame, usually inside the throat or on the shaft.</p></div>
         <div class="wz-q"><h4>Hole sets at the throat</h4>
           ${seg('throatPairs', 'Hole sets at the throat', [3, 4].map(n => ({ v: n, t: n + ' sets' })))}
-          <p class="hint">3 sets: the mains start at the throat. 4 sets: they start at the head.</p></div>
+          <p class="hint">3 sets: the mains start at the throat. 4 sets: they start at the head.</p>
+          <button type="button" class="btn count-btn" data-wz="count">
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 12.5 L8 3.5 L14 12.5" fill="none"
+              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="5.2" cy="11" r="1.1" fill="currentColor"/>
+              <circle cx="8" cy="11" r="1.1" fill="currentColor"/><circle cx="10.8" cy="11" r="1.1" fill="currentColor"/></svg>
+            Show me how to count</button></div>
         <div class="wz-q"><h4>Head size <em class="opt">Optional</em></h4>
           <label class="fld"><span class="sr-only">Head size</span><select id="wzHead">
             <option value="">Not sure (${DEFAULT_HEAD} sq in)</option>${HEAD_SIZES.map(h =>
@@ -72,7 +77,8 @@ const Wizard = (function () {
     review: () => {
       const r = rk(), s = sg();
       const bed = Geo.buildStringbed(r, r.pattern);
-      const st = Geo.stats(r, bed, draft.tMain, draft.tCross, s, s, draft.gauge, draft.gauge);
+      const rm = measureFrame(r);
+      const st = Geo.stats(rm, Geo.buildStringbed(rm, rm.pattern), draft.tMain, draft.tCross, s, s, draft.gauge, draft.gauge);
       const strung = plane => `${s.name} · ${draft.gauge.toFixed(2)} mm · ${plane} lb`;
       return `
         <dl class="wz-facts wz-review">
@@ -126,6 +132,8 @@ const Wizard = (function () {
     }
     const nav = e.target.closest('[data-wz]');
     if (!nav) return;
+    /* the same throat view the Your racket tab opens, for the frame in the draft */
+    if (nav.dataset.wz === 'count') { if (onCount) onCount(Object.assign({}, draft)); return; }
     /* Back on the first question closes the guide */
     if (nav.dataset.wz === 'back') {
       if (!stepIx) { onCancel(); return; }
@@ -143,8 +151,8 @@ const Wizard = (function () {
     }
   }
 
-  function open(mount, current, done, cancel) {
-    host = mount; onDone = done; onCancel = cancel; stepIx = 0;
+  function open(mount, current, done, cancel, count) {
+    host = mount; onDone = done; onCancel = cancel; onCount = count; stepIx = 0;
     const f = makeFrame(current);
     draft = {
       purpose: 'practice', pattern: f.pattern, throatPairs: f.throatPairs,
@@ -161,5 +169,19 @@ const Wizard = (function () {
     render();
   }
 
-  return { open, STEPS };
+  /* The count picked in the throat view comes back into the draft. */
+  function setSets(n) {
+    if (!draft || (n !== 3 && n !== 4)) return;
+    draft.throatPairs = n;
+    applyRecommendation();
+  }
+  /* Back from the throat view: the same question, with the count button
+     focused again. */
+  function resume() {
+    render();
+    const b = host && host.querySelector('[data-wz=count]');
+    if (b) b.focus();
+  }
+
+  return { open, setSets, resume, STEPS };
 })();

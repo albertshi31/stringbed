@@ -83,6 +83,7 @@ const Fmt = (function () {
   function cutPair(mainM, crossM) {
     let mains = up1(mainM + 2 * END_MAIN);
     let crosses = up1(crossM + 2 * END_CROSS);
+    let trimmed = false;
     /* A standard 40 ft set strings every frame on two piece, so the two pieces
        never add up to more than one. A dense frame is brought back inside it
        in proportion, which keeps the mains the longer piece. */
@@ -90,26 +91,34 @@ const Fmt = (function () {
       const k = SET_M / (mains + crosses);
       mains = Math.floor(mains * k * 10) / 10;
       crosses = Math.floor(crosses * k * 10) / 10;
+      trimmed = true;
     }
-    return { mains: mains, crosses: crosses, total: round1(mains + crosses) };
+    return { mains: mains, crosses: crosses, total: round1(mains + crosses), trimmed: trimmed };
   }
   /* The one number to cut: the whole length on one piece, the two pieces added
      up on two piece, so the total never disagrees with the pieces. */
   const cutFor = (stats, onePiece) => (onePiece ? cutTotal(stats.totalM, true)
                                                  : cutPair(stats.mainM, stats.crossM).total);
+  /* True when the full allowance would not fit in one set, so the cut was
+     brought back inside 12.2 m. The guide says so wherever it gives the cut. */
+  const cutTrimmed = (stats, onePiece) => (onePiece
+    ? up1(stats.totalM + END_M * ends(true)) > SET_M
+    : cutPair(stats.mainM, stats.crossM).trimmed);
 
   /* The LOCAL calendar date. toISOString() is UTC, so an evening job in the
      Americas was logged as tomorrow. */
+  /* Written the US way, "Oct 5, 2026", so nobody has to guess which number
+     is the month. */
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function today(d) {
     const t = d || new Date();
-    const p = n => String(n).padStart(2, '0');
-    return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+    return `${MONTHS[t.getMonth()]} ${t.getDate()}, ${t.getFullYear()}`;
   }
 
   /* the article follows how the number is SAID: eighteen opens with a vowel */
   const article = w => (/^(8|11|18)/.test(String(w)) ? 'an' : 'a');
   const Article = w => (article(w) === 'an' ? 'An' : 'A');
 
-  return { FT, END_M, END_MAIN, END_CROSS, SET_M, ONE_MIN_M, round1, up1, cutLength, cutTotal, cutPair, cutFor, splitOne, today,
+  return { FT, END_M, END_MAIN, END_CROSS, SET_M, ONE_MIN_M, round1, up1, cutLength, cutTotal, cutPair, cutFor, cutTrimmed, splitOne, today,
            metres, metresOnly, feet, article, Article };
 })();

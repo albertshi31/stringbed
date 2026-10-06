@@ -310,6 +310,7 @@ const Throat = (function () {
       host.classList.remove('on');
       document.removeEventListener('keydown', esc);
       if (restoreFocus && restoreFocus.focus) restoreFocus.focus();
+      if (cfg.onClose) cfg.onClose();
     };
     const esc = e => { if (e.key === 'Escape') close(); };
     host.querySelector('.modal-x').addEventListener('click', close);

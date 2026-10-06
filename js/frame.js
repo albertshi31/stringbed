@@ -70,3 +70,10 @@ function makeFrame(o) {
     theme: model ? Object.assign({}, NEUTRAL_THEME, model.theme) : NEUTRAL_THEME
   };
 }
+
+/* The frame the NUMBERS are measured on. A model is paint and hoop shape only,
+   so every string length, cut and stiffness figure comes from the generic hoop
+   at the user's head size. Picking a model never changes the cut. */
+function measureFrame(f) {
+  return f && f.model ? makeFrame(Object.assign({}, f, { model: null })) : f;
+}

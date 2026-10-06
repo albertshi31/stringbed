@@ -106,7 +106,10 @@
     const bed = Geo.buildStringbed(r, r.pattern);
     const sM = str(state.mainId), sC = str(state.crossId);
     const gM = state.mainGauge || sM.gauge, gC = state.crossGauge || sC.gauge;
-    const stats = Geo.stats(r, bed, state.tMain, state.tCross, sM, sC, gM, gC);
+    /* the model only repaints: the numbers come off the generic hoop */
+    const rm = measureFrame(r);
+    const bedM = rm === r ? bed : Geo.buildStringbed(rm, rm.pattern);
+    const stats = Geo.stats(rm, bedM, state.tMain, state.tCross, sM, sC, gM, gC);
     cache = { r, bed, stats, sM, sC, throatPairs: r.throatPairs, gM, gC };
     return cache;
   }
@@ -213,24 +216,35 @@
      job, and the checklist belongs to the old one. Propose the change, see
      whether the key moved, and put everything back if the answer is no.
      Nothing is asked when there is nothing to lose. */
-  function keepChecks(before) {
+  /* The question is asked in the app's own dialog, which does not block. So
+     the change is put back straight away and the caller redraws the old job,
+     and only a yes puts the change back in and runs `then`, the caller's own
+     follow-up (by default, redraw). */
+  function keepChecks(before, then) {
     if (configKey(Object.assign({}, state, before)) === configKey(state)) return true;
     if (!Job.hasChecks(state)) return true;
     const n = Object.keys(state.checked).filter(k => state.checked[k]).length;
-    if (confirm(`Changing the setup starts a different job, so your ${n} ticked ` +
-                `check${n === 1 ? '' : 's'} will be cleared.\n\nChange it anyway?`)) {
+    const after = {}; KEY_FIELDS.forEach(k => (after[k] = state[k]));
+    Object.keys(before).forEach(k => { if (!(k in after)) after[k] = state[k]; });
+    Object.assign(state, before);
+    Confirm.ask({
+      title: 'Start a different job?',
+      body: `Changing the setup starts a different job, so your ${n} ticked ` +
+            `check${n === 1 ? '' : 's'} will be cleared.`,
+      yes: 'Change it', no: 'Keep my checks'
+    }, () => {
+      Object.assign(state, after);
       // a different job starts at its first step
       state.step = 0; state.stepOpen = true; state.startBeat = 1; state.stringStep = 0;
       stopBeats(); clearTimeout(stringTimer); stringTimer = null;
-      return true;
-    }
-    Object.assign(state, before);
+      if (then) then(); else { render(false); mountKnots(); }
+    }, () => render(false));
     return false;
   }
-  function guardConfig(apply) {
+  function guardConfig(apply, then) {
     const before = {}; KEY_FIELDS.forEach(k => (before[k] = state[k]));
     apply();
-    return keepChecks(before);
+    return keepChecks(before, then);
   }
 
   /* ---------------- the spec strip ---------------- */
@@ -337,7 +351,7 @@
     if (i === 0) return pair(state.kind, state.crossKind);
     if (i === 1) return `${(state.mainGauge || c.sM.gauge).toFixed(2)} mm · `
       + pair(state.tMain + ' lb', state.tCross + ' lb');
-    return `${state.method === 'one' ? 'One' : 'Two'} piece · ${Job.machine(state.machineType).name.split(' ')[0]}`;
+    return `${state.method === 'one' ? 'One' : 'Two'} piece · ${Job.machine(state.machineType).name}`;
   }
 
   function renderDeck(c) {
@@ -393,10 +407,12 @@
 
     if (!el('selGauge').options.length)
       el('selGauge').innerHTML = GAUGES.map(g =>
-        `<option value="${g}">${g.toFixed(2)} mm</option>`).join('');
+        `<option value="${g}">${gaugeLabel(g)}</option>`).join('');
     el('selGauge').value = nearestGauge(state.mainGauge || c.sM.gauge);
     markSeg('methodSeg', 'm', state.method);
-    fillSeg('machineSeg', Job.MACHINES.map(m => ({ v: m.id, t: m.name.split(' ')[0] })), 'machine');
+    /* the full name, with its kind in brackets on a second line so three fit */
+    fillSeg('machineSeg', Job.MACHINES.map(m => ({ v: m.id,
+      t: m.name.replace(/ (\(.*\))$/, ' <span class="seg-sub">$1</span>') })), 'machine');
     markSeg('machineSeg', 'machine', state.machineType);
     el('setupHelp').textContent = (state.method === 'one' && heldCross
       ? 'One piece uses one string, so the crosses now match the mains. ' : '')
@@ -1086,11 +1102,40 @@
     wizardOpener = wizardOpener || document.activeElement;
     host.classList.add('on');
     if (!host._trapped) { host.addEventListener('keydown', trapTab(card)); host._trapped = true; }
-    Wizard.open(el('wizard'), state, applyWizard, closeWizard);
+    Wizard.open(el('wizard'), state, applyWizard, closeWizard, countFromWizard);
+  }
+  /* "Show me how to count" in Guided setup. The setup steps aside for the
+     throat view, which shows the frame in the setup's answers. A count picked
+     there goes into the setup, and closing the view brings the setup back on
+     the same question. */
+  function countFromWizard(d) {
+    const host = el('wizardCard');
+    host.classList.remove('on');
+    const show = n => {
+      const f = makeFrame(Object.assign({}, state, { pattern: d.pattern, throatPairs: n, headSize: d.headSize }));
+      const bed = Geo.buildStringbed(f, f.pattern);
+      const c = Object.assign({}, cache, { r: f, bed: bed, throatPairs: f.throatPairs });
+      openThroat(c, {
+        onPick: m => { if (m === n) return; Wizard.setSets(m); show(m); },
+        onClose: () => {
+          if (host.classList.contains('on') || document.querySelector('#throatModal.on')) return;
+          host.classList.add('on');
+          Wizard.resume();
+        }
+      });
+    };
+    show(d.throatPairs);
   }
   function applyWizard(d) {
     /* The guide only asks before throwing away work: a job with ticked checks. */
-    if (Job.hasChecks(state) && !confirm('Start a new job? Your ticked checks will be cleared.')) return;
+    if (Job.hasChecks(state)) {
+      Confirm.ask({ title: 'Start a new job?', body: 'Your ticked checks will be cleared.',
+        yes: 'Start a new job', no: 'Keep my checks' }, () => startWizardJob(d));
+      return;
+    }
+    startWizardJob(d);
+  }
+  function startWizardJob(d) {
     state.purpose = Job.purpose(d.purpose).id;
     heldCross = null;
     state.pattern = d.pattern;
@@ -1338,8 +1383,9 @@
 
     /* ---- 1 · your racket ---- */
     const setFrame = apply => {
-      if (!guardConfig(apply)) { render(false); return false; }
-      render(false); mountKnots();
+      const then = () => { render(false); mountKnots(); };
+      if (!guardConfig(apply, then)) { render(false); return false; }
+      then();
       return true;
     };
     el('rDeckNav').addEventListener('click', e => {
@@ -1380,6 +1426,7 @@
        the cross kind that does. */
     el('kindSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-kind]'); if (!b || b.disabled) return;
+      const then = () => { render(false); mountKnots(); if (crossLocked()) goCard(1); };
       if (!guardConfig(() => {
         /* The crosses come along unless a hybrid was chosen on purpose. Leaving
            them behind turned one tap on the mains into a hybrid nobody asked for. */
@@ -1387,25 +1434,24 @@
         state.kind = b.dataset.kind;
         state.mainId = idOfKind(state.kind);
         if (crossLocked() || wasSame) { state.crossKind = state.kind; state.crossId = state.mainId; }
-      })) { render(false); return; }
-      render(false); mountKnots();
-      if (crossLocked()) goCard(1);
+      }, then)) { render(false); return; }
+      then();
     });
     el('crossKindSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-kind]'); if (!b || b.disabled) return;
+      const then = () => { render(false); mountKnots(); goCard(1); };
       if (!guardConfig(() => {
         state.crossKind = b.dataset.kind;
         state.crossId = idOfKind(state.crossKind);
-      })) { render(false); return; }
-      render(false); mountKnots();
-      goCard(1);
+      }, then)) { render(false); return; }
+      then();
     });
 
     let tenBefore = null;
     const tenStart = () => { if (!tenBefore) tenBefore = { tMain: state.tMain, tCross: state.tCross }; };
     const tenCommit = () => {
       const before = tenBefore; tenBefore = null;
-      if (before) keepChecks(before);
+      if (before) keepChecks(before, () => render(false));
       render(false);
     };
     /* Typed, not dragged. A half-typed number ("5" on the way to "55") is left
@@ -1441,13 +1487,18 @@
     el('selGauge').addEventListener('change', e => {
       if (!guardConfig(() => {
         state.mainGauge = +e.target.value; state.crossGauge = state.mainGauge;
-      })) { render(false); return; }
+      }, () => render(false))) { render(false); return; }
       render(false);
     });
     el('methodSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-m]'); if (!b || b.disabled) return;
       const from = state.method, to = b.dataset.m;
       const held = { kind: state.crossKind, id: state.crossId };
+      const then = () => {
+        if (to === 'one' && from === 'two') heldCross = held.id !== state.mainId ? held : null;
+        else if (to === 'two') heldCross = null;
+        render(false); selectKnot(knotLesson);
+      };
       if (!guardConfig(() => {
         state.method = to;
         if (to === 'one') {                   // one string, so the crosses follow
@@ -1458,10 +1509,8 @@
           state.crossKind = heldCross.kind;
           state.crossId = heldCross.id;
         }
-      })) { render(false); return; }
-      if (to === 'one' && from === 'two') heldCross = held.id !== state.mainId ? held : null;
-      else if (to === 'two') heldCross = null;
-      render(false); selectKnot(knotLesson);
+      }, then)) { render(false); return; }
+      then();
     });
     el('machineSeg').addEventListener('click', e => {
       const b = e.target.closest('[data-machine]'); if (!b) return;
@@ -1503,7 +1552,7 @@
         if (!guardConfig(() => {
           if (m.dataset.method === 'one') state.crossId = state.mainId;
           state.method = m.dataset.method;
-        })) { render(false); return; }
+        }, () => render(false))) { render(false); return; }
         render(false); return;
       }
       const h = e.target.closest('.step-h');
@@ -1594,27 +1643,30 @@
     return Number.isFinite(n) ? Math.max(35, Math.min(70, Math.round(n))) : (fallback || 52);
   };
 
-  function openThroat() {
+  function openThroat(cIn, hooks) {
+    const c = cIn || cache;
     Throat.open({
-      racket: cache.r, bed: cache.bed, throatPairs: cache.throatPairs, method: state.method,
+      racket: c.r, bed: c.bed, throatPairs: c.throatPairs, method: state.method,
+      onClose: hooks && hooks.onClose,
       /* the count can be confirmed or changed from inside the pop-up */
-      onPick: n => {
+      onPick: hooks && hooks.onPick ? hooks.onPick : n => {
         if (n === cache.throatPairs) return;
-        if (!guardConfig(() => { state.throatPairs = n; })) { render(false); return; }
-        render(false); mountKnots(); openThroat();
+        const then = () => { render(false); mountKnots(); openThroat(); };
+        if (!guardConfig(() => { state.throatPairs = n; }, then)) { render(false); return; }
+        then();
       },
-      headSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'head'),
-        { highlightYoke: true, markThroatPairs: cache.throatPairs, hideLabel: true, knots: [] })),
-      depthSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'head'),
+      headSvg: RacketSVG.render(Object.assign(svgOpts(c, 'empty', false, 'head'),
+        { highlightYoke: true, markThroatPairs: c.throatPairs, hideLabel: true, knots: [] })),
+      depthSvg: RacketSVG.render(Object.assign(svgOpts(c, 'empty', false, 'head'),
         { hideLabel: true, grommets: false, knots: [] })),
-      yokeSvg: RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'yoke'),
-        { highlightYoke: true, markThroatPairs: cache.throatPairs, knots: [] }))
+      yokeSvg: RacketSVG.render(Object.assign(svgOpts(c, 'empty', false, 'yoke'),
+        { highlightYoke: true, markThroatPairs: c.throatPairs, knots: [] }))
     });
     /* the close-up's labels are sized for the screen it opened on, as the
        bench drawings are; it is a picture only, so it stays out of the tab order */
     const yoke = document.querySelector('#throatModal .th-yoke');
-    if (yoke) paintArt(yoke, fit => RacketSVG.render(Object.assign(svgOpts(cache, 'empty', false, 'yoke'),
-      { highlightYoke: true, markThroatPairs: cache.throatPairs, knots: [], minFont: fit.minFont }))
+    if (yoke) paintArt(yoke, fit => RacketSVG.render(Object.assign(svgOpts(c, 'empty', false, 'yoke'),
+      { highlightYoke: true, markThroatPairs: c.throatPairs, knots: [], minFont: fit.minFont }))
       .replace(/tabindex="0"/g, 'tabindex="-1"')
       .replace(/<svg /g, '<svg aria-hidden="true" focusable="false" '));
   }

@@ -89,7 +89,7 @@ const Job = (function () {
       operator: 'Moderately technique-dependent', speed: 'Fast',
       clamp: 'Clamp promptly after the crank locks.',
       why: 'A lockout head stops pulling the moment it trips. The string starts to relax right away, and any tension it loses before you clamp is gone for good. Being fast is not the point. What matters is a rhythm you repeat on every string, so each one is clamped at the same moment. Expect a slightly softer stringbed than the same number gives on a constant-pull machine.' },
-    { id: 'electronic', name: 'Electronic constant-pull', short: 'electronic',
+    { id: 'electronic', name: 'Electronic (constant pull)', short: 'electronic',
       reference: 'A load cell (a force sensor), accurate when calibrated, and it needs calibrating',
       pull: 'Constant pull', beat: 'Wait for a stable reading',
       repeat: 'Easiest to repeat, when calibrated',
@@ -173,7 +173,7 @@ const Job = (function () {
   const TERMS = {
     mains:   'The strings that run up and down the racket, along its length.',
     crosses: 'The strings that run side to side, woven through the mains.',
-    gauge:   'The thickness of the string, usually measured in millimeters. Thinner strings generally provide more feel, bite on the ball, and spin potential, but break more easily. Thicker strings are more durable and usually feel slightly firmer and more controlled.',
+    gauge:   'The thickness of the string, in millimeters. Thinner strings give more feel, bite and spin potential, but break more easily. Thicker strings are more durable and feel firmer. Packages often print a number instead, and a higher number is thinner: 15L is about 1.35 mm, 16 about 1.30, 16L about 1.25 to 1.28, 17 about 1.20 to 1.24, and 18 about 1.10 to 1.15.',
     throat:  'The end of the hoop where the frame narrows into the handle.',
     head:    'The end of the hoop furthest from the handle.',
     grommet: 'The plastic sleeve in each hole that the string passes through, so it does not chafe on the frame.',
@@ -204,8 +204,8 @@ const Job = (function () {
     comfort: 'How soft or harsh the hit feels on your arm. Softer strings and lower tension are gentler. Stiff polyester at high tension is the harshest.',
     feel: 'The feedback you get through the racket when you hit, so you can sense where and how cleanly you struck the ball. Thinner strings and natural gut usually give the most.',
     durability: 'How long the strings keep playing well before they break or go dead. Thicker gauges and polyester last longest. Thin multifilament and natural gut wear out fastest.',
-    'tension loss': 'Strings lose tension from the moment they are strung. Losing about 10 to 15 percent in the first day is normal, and it keeps dropping more slowly after that. Polyester loses tension fastest and then plays dead, which is a good reason to restring it.',
-    snapback: 'When the ball lands, the mains slide sideways across the crosses and then spring back into place. That snap adds spin. Slick, stiff strings such as polyester slide and return most freely, which is a big part of why they are the spin choice.',
+    'tension loss': 'Strings lose tension from the moment they are strung. Losing about 10 to 15% in the first day is normal, and it keeps dropping more slowly after that. Polyester loses tension fastest and then plays dead, which is a good reason to restring it.',
+    snapback: 'When the ball hits the strings, the mains slide sideways across the crosses and then spring back into place. That snap adds spin. Slick, stiff strings such as polyester slide and return most freely, which is a big part of why they are the spin choice.',
     notching: 'The grooves strings wear into each other where the mains and crosses rub. Notches catch the mains, so snapback and spin drop off. A deep notch is also where the string will eventually break, so it is a sign the bed is near the end of its life.',
     /* how a job is set up and strung */
     'one piece': 'The whole racket strung with one length of string, mains and crosses together. It needs only two knots.',

@@ -113,7 +113,7 @@ const Holes = (function () {
     const ta = tMain(xa), tb = tMain(xb);
     const yc = CROSS_YS[1], tc = tCross(yc);   // a hole down from the corner, so the steps have room
     const cIn = at(tc, 0), cOut = at(tc, BEAM + 3);
-    /* The knot sits on the stringbed side, just below the grommet's inner end,
+    /* The knot sits on the stringbed side, snug against the grommet's inner end,
        tied around the main where it comes out of the frame. The string goes up
        through the grommet from there and along the outside of the frame. */
     const hole = at(ta, 0);
@@ -148,7 +148,7 @@ const Holes = (function () {
     s += badge(mid[0], mid[1], 2);
     s += badge(cOut[0] + 20, yc, 3, WARN);
     s = behind + frame() + s;
-    return svg(s, 'A close-up of the top right of a hoop with the mains strung. One: the starting hole is one of the two outermost main holes, and the knot sits just below the grommet on the stringbed side. Two: the string runs along the outside of the frame. Three: it goes in through the first cross hole and across.');
+    return svg(s, 'A close-up of the top right of a hoop with the mains strung. One: the starting hole is one of the two outermost main holes, and the knot sits snug against the grommet, on the stringbed side. Two: the string runs along the outside of the frame. Three: it goes in through the first cross hole and across.');
   }
 
   const svg = (body, aria) => `<svg class="ho-svg" viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${aria}">${body}</svg>`;
@@ -168,10 +168,10 @@ const Holes = (function () {
       title: 'Where the starting knot goes',
       art: startSvg,
       text: `<ol class="ho-steps">
-        <li><b>Starting hole.</b> Usually the outermost main's hole or the one next to it, both
-          highlighted. Not every frame marks it, but that grommet is usually slightly bigger. Feed the
-          cross string through it beside the main and tie the starting knot around the main. The knot
-          sits just below the grommet, on the stringbed side, tied around the main.</li>
+        <li><b>Starting hole.</b> One of the two highlighted holes: the outermost main's hole or the
+          one next to it. Your frame's stringing pattern names which one. Not every frame marks it, but
+          that grommet is usually slightly bigger. Feed the cross string through it beside the main and
+          tie the starting knot around the main, snug against the grommet, on the stringbed side.</li>
         <li><b>Along the outside.</b> Run the string along the outside of the frame.</li>
         <li><b>First cross hole.</b> Go in through the first cross hole and weave the first cross.</li>
       </ol>
