@@ -442,12 +442,28 @@
     el('rDeckPrev').disabled = state.rCard === 0;
     el('rDeckNext').textContent = state.rCard === R_CARDS.length - 1 ? 'Next: choose a string' : 'Next';
   }
+  /* On a phone the deck sits below the summary, the rail and the drawing, so a
+     new card used to open somewhere off screen. Moving between cards now
+     brings the card's heading to the top of the screen. */
+  function cardToTop(node) {
+    if (!node || !matchMedia('(max-width: 900px)').matches) return;
+    requestAnimationFrame(() => {
+      const head = document.querySelector('.top');
+      const pinned = head && getComputedStyle(head).position === 'sticky';
+      const off = (pinned ? head.getBoundingClientRect().height : 0) + 12;
+      const y = node.getBoundingClientRect().top + scrollY - off;
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrollTo({ top: Math.max(0, y), behavior: still ? 'auto' : 'smooth' });
+    });
+  }
+
   /* past the last card is the string tab, as on the string deck */
   function goRCard(i) {
     if (i >= R_CARDS.length) { showTab('string'); return; }
     state.rCard = Math.max(0, Math.min(R_CARDS.length - 1, i));
     renderRacket(cache || compute());
     save();
+    cardToTop(rCardEls()[state.rCard]);
   }
 
   /* ---------------- 2 · string ---------------- */
@@ -488,6 +504,7 @@
     state.card = Math.max(0, Math.min(CARDS.length - 1, i));
     renderDeck(cache || compute());
     save();
+    cardToTop(cardEls()[state.card]);
   }
 
   function renderString(c, animate) {
