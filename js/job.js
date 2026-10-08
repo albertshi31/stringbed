@@ -314,6 +314,8 @@ const Job = (function () {
     take('pattern',     v => patterns.includes(v));
     take('throatPairs', v => v === 3 || v === 4);
     take('headSize',    v => v === null || (headSizes || []).includes(v));
+    /* Speed Pro was folded into Speed: one HEAD Speed in the picker */
+    if (o.model === 'speed-pro') o.model = 'speed';
     take('model',       v => v === null || (models || []).includes(v));
     take('mainId',   v => strings.some(s => s.id === v));
     take('crossId',  v => strings.some(s => s.id === v));

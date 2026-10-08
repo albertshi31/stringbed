@@ -13,9 +13,15 @@
 :root{
   /* ground */
   --bg:#0b0e12;
-  --panel:#12161c;
-  --panel-2:#161b22;
-  --well:#0c1014;
+  /* Surfaces are see-through washes over the ground, not solid blocks, so a
+     racket's tint runs through every card instead of stopping at its edge.
+     Over the plain ground they come out at the same shades as before. */
+  --panel:rgba(255,255,255,.028);
+  --panel-2:rgba(255,255,255,.05);
+  --well:rgba(0,0,0,.16);
+  /* for the few things that float over other content and must hide it */
+  --panel-solid:#12161c;
+  --panel-2-solid:#161b22;
   --line:rgba(255,255,255,.075);
   --line-2:rgba(255,255,255,.16);
 
@@ -28,6 +34,10 @@
   --accent:#4cc9e0;
   --accent-2:#9fdcea;
   --on-accent:#04252d;
+  /* a picked racket tints the page; none leaves it plain */
+  --bg-tint:transparent; --bg-tint-2:transparent;
+  --tint-layers:radial-gradient(130vmax 80vmax at 85% -15%, color-mix(in srgb, var(--bg-tint) 100%, transparent) 0%, color-mix(in srgb, var(--bg-tint) 92%, transparent) 12%, color-mix(in srgb, var(--bg-tint) 76%, transparent) 25%, color-mix(in srgb, var(--bg-tint) 56%, transparent) 38%, color-mix(in srgb, var(--bg-tint) 38%, transparent) 50%, color-mix(in srgb, var(--bg-tint) 22%, transparent) 62%, color-mix(in srgb, var(--bg-tint) 10%, transparent) 74%, color-mix(in srgb, var(--bg-tint) 3%, transparent) 86%, color-mix(in srgb, var(--bg-tint) 0%, transparent) 100%),
+    radial-gradient(110vmax 75vmax at -10% 115%, color-mix(in srgb, var(--bg-tint-2) 100%, transparent) 0%, color-mix(in srgb, var(--bg-tint-2) 92%, transparent) 12%, color-mix(in srgb, var(--bg-tint-2) 76%, transparent) 25%, color-mix(in srgb, var(--bg-tint-2) 56%, transparent) 38%, color-mix(in srgb, var(--bg-tint-2) 38%, transparent) 50%, color-mix(in srgb, var(--bg-tint-2) 22%, transparent) 62%, color-mix(in srgb, var(--bg-tint-2) 10%, transparent) 74%, color-mix(in srgb, var(--bg-tint-2) 3%, transparent) 86%, color-mix(in srgb, var(--bg-tint-2) 0%, transparent) 100%);
   --warn:#e8b268;
   --good:#79cfa4;
 
@@ -43,11 +53,20 @@
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+/* the full-width header backing must never add a sideways scroll */
+html{overflow-x:clip}
 html{scroll-behavior:smooth}
 body{
-  background:var(--bg);color:var(--ink);
+  background:var(--bg);
+  color:var(--ink);
   font:400 14px/1.6 var(--font);
   -webkit-font-smoothing:antialiased;
+}
+/* The racket's tint sits on a fixed layer behind the page. iOS Safari ignores
+   background-attachment:fixed, so a pinned layer is what keeps it on phones. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:var(--tint-layers);
 }
 h1,h2,h3,h4{margin:0;letter-spacing:-.015em;font-weight:600}
 p{margin:0 0 10px}
@@ -58,15 +77,21 @@ a{color:var(--accent)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-.app{max-width:1560px;margin:0 auto;padding:0 clamp(14px,3vw,34px)}
+.app{--gutter:clamp(14px,3vw,34px);max-width:1560px;margin:0 auto;padding:0 var(--gutter)}
 
 /* ============================ chrome ============================ */
 .top{
   position:sticky;top:0;z-index:60;
   display:flex;align-items:center;gap:16px;min-height:var(--top-h);
-  background:color-mix(in srgb,var(--bg) 92%,transparent);
-  backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);
+}
+/* The header's frosted backing runs the full width of the window. Kept to the
+   content column, its edge drew a hard vertical line through the tint. */
+.top::before{
+  content:"";position:absolute;top:0;bottom:-1px;left:50%;width:100vw;transform:translateX(-50%);z-index:-1;
+  background:color-mix(in srgb,var(--bg) 40%,transparent);
+  backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
+  pointer-events:none;
 }
 .brand{display:flex;align-items:center;gap:9px;flex:none}
 /* The mark is the pattern itself: mains one way, crosses the other. */
@@ -312,8 +337,8 @@ select,input[type=text],input[type=number]{
   background-size:4px 4px,4px 4px;background-repeat:no-repeat;
 }
 select:hover{border-color:var(--accent)}
-select optgroup{background:var(--panel);color:var(--muted);font-style:normal;font-weight:600}
-select option{background:var(--panel-2);color:var(--ink)}
+select optgroup{background:var(--panel-solid);color:var(--muted);font-style:normal;font-weight:600}
+select option{background:var(--panel-2-solid);color:var(--ink)}
 /* A locked control still has to be readable: it is showing you the value that
    is in force, not hiding it. */
 select:disabled,input:disabled{opacity:.62;cursor:default;color:var(--ink)}
@@ -414,7 +439,9 @@ details.why b{color:var(--ink-2)}
    sticks under the header while a long step scrolls. */
 .prog{display:flex;flex-direction:column;gap:9px;margin:0 -14px 10px;padding:10px 14px 12px;
   position:sticky;top:var(--top-h);z-index:20;
-  background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);
+  /* solid page color with the page's own tint pinned to the window, so the
+     bar hides what scrolls under it and still matches the page around it */
+  background:var(--tint-layers),var(--bg);background-attachment:fixed;
   border-bottom:1px solid var(--line)}
 .prog-top{display:flex;align-items:baseline;gap:12px}
 #progText{font:500 12px var(--mono);color:var(--ink-2)}
@@ -591,7 +618,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .why-svg .why-l{font:700 12px var(--font);paint-order:stroke;stroke:#0c1014;stroke-width:5px;stroke-linejoin:round}
 .throat-cta{margin:10px 0 14px}
 .step-b > .stage{margin:4px 0 14px;position:sticky;top:var(--hdr,104px);z-index:6;
-  background:var(--panel);padding-bottom:6px}
+  background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding-bottom:6px}
 .step-b > .stage .stage-art{padding:6px}
 .step-b > .stage #doArt .racket-svg,.step-b > .stage .racket-svg{max-height:30vh}
 .step-b > .stage .do-cap{display:none}
@@ -959,7 +986,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .modal-back{position:absolute;inset:0;background:rgba(4,6,9,.76);backdrop-filter:blur(3px)}
 .modal-card{
   position:relative;margin:5vh auto;max-width:1020px;width:calc(100% - 24px);
-  max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line-2);
+  max-height:90vh;overflow:auto;background:var(--panel-solid);border:1px solid var(--line-2);
   border-radius:14px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.6)
 }
 .modal-x{
@@ -1120,7 +1147,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .tip{
   position:fixed;z-index:200;pointer-events:none;opacity:0;transform:translateY(3px);
   transition:opacity .12s ease,transform .12s ease;max-width:min(290px,calc(100vw - 16px));
-  background:var(--panel);border:1px solid var(--line-2);border-left:2px solid var(--accent);
+  background:var(--panel-solid);border:1px solid var(--line-2);border-left:2px solid var(--accent);
   border-radius:8px;padding:9px 11px;box-shadow:0 12px 28px rgba(0,0,0,.55);
   font-size:12px;line-height:1.55
 }
@@ -1171,6 +1198,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .top-actions .btn{min-height:32px;padding:0 10px;font-size:12px}
   /* one slim header that scrolls away, so the step being read gets the screen */
   .top{position:static;padding:6px 0 0;gap:4px 8px}
+  .top::before{display:none}
   .brand-name{font-size:13px}
   .tab{min-height:38px;padding:0 9px;font-size:13px}
   /* the open step has its own number badge; the blue edge down the whole
@@ -1196,7 +1224,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 
 @media(max-width:640px){
   /* 16px gutters, and type a phone can read at arm's length on the bench */
-  .app{padding:0 16px}
+  .app{--gutter:16px;padding:0 var(--gutter)}
   body{font-size:15px}
   .screen-h p{font-size:14px}
   .step.on>.step-b{font-size:15px;line-height:1.65}
@@ -1254,7 +1282,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .spec-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin-bottom:18px}
   .step-sh{margin:22px 0 10px}
   /* the open step has no panel of its own on a phone, so neither does its drawing */
-  .step-b > .stage{background:var(--bg);box-shadow:0 0 0 4px var(--bg)}
+  .step-b > .stage{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
   /* mains and crosses: the drawing and its player share the screen with the
      first lines of the step instead of filling it */
   .step-b > .stage[data-view=mains] #doArt .racket-svg,
@@ -1353,7 +1381,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
    the drawing always in view, the way the knot lessons work. */
 @media(max-width:900px){
   .step-b > .stage[data-view=mains],.step-b > .stage[data-view=crosses]{
-    position:sticky;top:0;z-index:6;background:var(--bg);padding-bottom:8px;margin-bottom:10px;
+    position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding-bottom:8px;margin-bottom:10px;
     box-shadow:0 10px 14px -10px rgba(0,0,0,.9)}
   .step-b > .stage[data-view=mains] #doArt .racket-svg,
   .step-b > .stage[data-view=crosses] #doArt .racket-svg{max-height:26vh}
@@ -1390,13 +1418,12 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 .gloss-toggle{display:block;margin:0 0 14px auto}
 
 @media(max-width:640px){
-  /* the job in one compact line: Pro Staff · Synthetic gut 1.30 mm · 55 lb · 11.5 m */
-  .spec{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;padding:8px 0 9px;overflow:visible}
-  .spec-i,.spec-i:nth-child(odd),.spec-i:first-child{display:inline;flex:none;padding:0;border:0;white-space:nowrap}
-  .spec-i em{display:none}
-  .spec-i b{font:500 13px/1.4 var(--font);color:var(--ink-2)}
-  /* the dot trails each item, so a wrapped line never starts with one */
-  .spec-i:not(:last-child)::after{content:"\00b7";margin:0 7px;color:var(--muted)}
+  /* The job as a tidy 2x2: small label over each value, so nothing wraps
+     mid-sentence or leaves a stray dot at a line end. */
+  .spec{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:8px 14px;padding:10px 0 11px;overflow:visible}
+  .spec-i,.spec-i:nth-child(odd),.spec-i:first-child{display:flex;flex-direction:column;gap:1px;padding:0;border:0;white-space:normal;min-width:0}
+  .spec-i em{display:block;font-size:10px;letter-spacing:.1em}
+  .spec-i b{font:500 13px/1.35 var(--font);color:var(--ink-2);overflow-wrap:anywhere;text-wrap:balance}
   .spec-model{display:none}
 
   /* Learn's sections: one row that scrolls sideways, one underline */
@@ -1462,7 +1489,7 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .primer.slim .primer-x{position:static;flex:none;order:2}
 
   /* step 5: the walk-through drawing pins, compact, and its cards scroll under it */
-  .step-b > .stage[data-view=start]{position:sticky;top:0;z-index:6;background:var(--bg);
+  .step-b > .stage[data-view=start]{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
     padding-bottom:6px;margin-bottom:10px;box-shadow:0 10px 14px -10px rgba(0,0,0,.9)}
   .step-b > .stage[data-view=start] #doArt .racket-svg{max-height:30vh}
 }
@@ -1531,4 +1558,62 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
 @media(max-width:640px){
   .spec-strip:has(> li.spec-wide){grid-template-columns:repeat(2,minmax(0,1fr))}
   .spec-strip li.spec-wide{grid-column:1/-1}
+}
+
+/* Model picker: a search box over a swipeable row of small racket cards */
+.mp-search{display:block;margin:4px 0 12px}
+.mp-search input{width:100%;font:500 14px var(--font);color:var(--ink);background:var(--panel-2);min-height:38px;
+  border:1px solid var(--line-2);border-radius:7px;padding:8px 12px}
+@media (max-width:600px){.mp-search input{font-size:16px}}
+.mp-search input:focus{outline:none;border-color:var(--accent)}
+.mp-wrap{position:relative;display:flex;align-items:center;gap:6px}
+.mp-row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 2px;
+  padding:4px 2px 6px;flex:1;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  --fl:24px;--fr:24px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 var(--fl),#000 calc(100% - var(--fr)),transparent 100%)}
+.mp-row::-webkit-scrollbar{display:none}
+/* the fade only shows on a side that has more cards to scroll to */
+.mp-row.at-start{--fl:0px}
+.mp-row.at-end{--fr:0px}
+.mp-arrow:disabled{opacity:.3;cursor:default;border-color:var(--line);color:var(--ink-2)}
+.mp-card{flex:0 0 92px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 6px 9px;cursor:pointer;
+  color:var(--ink-2);font:inherit;text-align:center}
+.mp-card[hidden]{display:none}
+.mp-card svg{width:46px;height:76px;display:block;margin-bottom:4px}
+.mp-card b{font-size:13px;font-weight:600;line-height:1.2;color:var(--ink)}
+.mp-card em{font-style:normal;font-size:11px;color:var(--muted)}
+.mp-card:hover{border-color:rgba(255,255,255,.2)}
+.mp-card.on{border-color:var(--accent);background:var(--panel-2);box-shadow:0 0 0 1px var(--accent) inset}
+.mp-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mp-arrow{flex:0 0 30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);
+  color:var(--ink-2);font-size:20px;line-height:1;cursor:pointer;padding:0 0 2px}
+.mp-arrow:hover{border-color:var(--accent);color:var(--ink)}
+.mp-empty{font-size:13px;color:var(--muted);margin:2px 0 8px}
+@media (hover:none),(max-width:600px){.mp-arrow{display:none}}
+
+/* On phones a pinned drawing has the step scrolling right under it, so its
+   backing is solid, runs edge to edge (no tinted strips beside it) and fades
+   out at the bottom instead of ending on a hard line. It is the ground with
+   the racket's tint laid over it, not a see-through wash: WebKit (iOS
+   Safari) let the step text show through even a 97% backing. */
+@media(max-width:900px){
+  .step-b > .stage[style*="sticky"],
+  .step-b > .stage[data-view=mains],.step-b > .stage[data-view=crosses],.step-b > .stage[data-view=start]{
+    background:linear-gradient(var(--bg-tint),var(--bg-tint)),var(--bg);
+    margin-left:calc(-1 * var(--gutter));margin-right:calc(-1 * var(--gutter));
+    padding-left:var(--gutter);padding-right:var(--gutter);
+    box-shadow:0 14px 16px -6px color-mix(in srgb,var(--bg) 97%,transparent);
+  }
+}
+
+/* On phones each rail row reads the same way: number, the label, and its
+   answer under the label. A long answer no longer drops to a right-aligned
+   second line while short ones sit beside their label. */
+@media(max-width:640px){
+  .deck-tab{align-items:flex-start}
+  .deck-n{margin-top:1px}
+  .deck-t{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:1px}
+  .deck-t em{margin-left:0;text-align:left;white-space:normal}
 }

@@ -323,7 +323,7 @@ const Steps = (function () {
           `You said <b>${throatPairs} sets</b>, so the mains start at the <b>${pl.mainsStart}</b> and
            finish at the <b>${pl.mainsEnd}</b>. ${parityWhy}`,
           `Counted ${throatPairs === 3 ? 4 : 3} instead? Change it on the
-           <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="racket">Your racket</button></span>
+           <span class="nobr"><button type="button" class="linkbtn inline-link" data-goto="racket">Racket</button></span>
            tab before you thread anything.`
         ],
         watch: `If the count is not obvious, most frames print the pattern and the tie-off holes inside the

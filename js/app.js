@@ -58,21 +58,57 @@
     const n = v.length === 3 ? v.split('').map(c => c + c).join('') : v;
     return [0, 2, 4].map(i => parseInt(n.substr(i, 2), 16));
   }
+  const hex2 = c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
   /* light outline for a dark string, dark outline for a light one */
   function strEdge(hex) {
     const [r, g, b] = rgb(hex).map(v => v / 255);
     return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 0.45 ? '#e9eef5' : '#0b0e12';
   }
-  /* The chrome keeps ONE accent across every frame — this is an instrument
-     panel, not a brand showcase, and letting a racket's paint drive the buttons
-     is what made every screen shout at a different volume. Only the drawing
-     wears the frame's own colours. */
+  /* A picked model dresses the whole page in its colors: the accent on the
+     buttons and highlights, and a soft tint of it behind everything. With no
+     model the page keeps its own cyan. The accent is lifted until it reads on
+     the dark ground, so a black or navy frame still gives a usable color. */
+  const ACCENT_VARS = ['--accent', '--accent-2', '--on-accent', '--bg-tint', '--bg-tint-2'];
+  /* WCAG contrast, so the accent is judged the way a reader sees it: it is
+     small text on the dark ground and the fill behind button labels. */
+  const relLum = c => c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+    .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const contrast = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const GROUND = rgb('#0b0e12');
+  /* 5:1 on the bare ground keeps it above 4.5:1 on the lighter cards too */
+  function liftTo(hex, target) {
+    const c = rgb(hex);
+    if (contrast(c, GROUND) >= target) return hex;
+    for (let k = 0.05; k < 1; k += 0.05) {
+      const m = c.map(v => v + (255 - v) * k);
+      if (contrast(m, GROUND) >= target) return hex2(m);
+    }
+    return '#e9eef5';
+  }
+  const chroma = hex => { const c = rgb(hex); return Math.max(...c) - Math.min(...c); };
+  function pageAccent(t) {
+    // the most colorful of the frame's own colors, so a white frame with a
+    // red stripe gives red, not white
+    const pick = [t.accent, t.frameB, t.accent2, t.butt].filter(Boolean)
+      .sort((a, b) => chroma(b) - chroma(a))[0];
+    return liftTo(pick, 5);
+  }
   function applyTheme(r) {
     const t = r.theme, root = document.documentElement;
     const set = (k, v) => root.style.setProperty(k, v);
     set('--frame-a', t.frameA); set('--frame-b', t.frameB); set('--frame-edge', t.frameEdge);
     set('--str', mainHex());
     set('--str-edge', strEdge(mainHex()));
+    const m = modelById(state.model);
+    if (!m) { ACCENT_VARS.forEach(k => root.style.removeProperty(k)); return; }
+    const a = pageAccent(m.theme), c = rgb(a), base = rgb(m.theme.frameB);
+    set('--accent', a);
+    set('--accent-2', hex2(c.map(v => v + (255 - v) * 0.45)));
+    // whichever label color reads better on it (white text on a mid red or
+    // orange fell to about 3:1)
+    set('--on-accent', contrast(c, GROUND) >= contrast(c, [255, 255, 255]) ? '#0b0e12' : '#ffffff');
+    set('--bg-tint', `rgba(${c.join(',')},.055)`);
+    set('--bg-tint-2', `rgba(${base.join(',')},.035)`);
   }
 
   /* ---------------- core compute ---------------- */
@@ -291,6 +327,8 @@
         + MODEL_BRANDS.map(b => `<optgroup label="${b}">${RACKET_MODELS.filter(m => m.brand === b)
           .map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
     sel.value = state.model || '';
+    renderModelRow();
+    requestAnimationFrame(modelEdges);
     const head = el('selHead');
     if (!head.options.length)
       head.innerHTML = `<option value="">${HEAD_NOT_SURE}</option>`
@@ -304,6 +342,84 @@
     paintArt(el('racketArt'), fit => RacketSVG.render(svgOpts(c, 'empty', false, 'head',
       Object.assign({ noKnots: true }, sets, fit))));
     // the summary strip already gives the cut length: no fact boxes here
+  }
+
+  /* The model picker: a search box over a swipeable row of small racket
+     cards, each painted in that model's colors. The hidden select stays the
+     one source of the choice, so picking a card just sets it. */
+  const fold = t => String(t).toLowerCase().replace(/[^a-z0-9]/g, '');
+  function miniRacket(m) {
+    const t = m ? m.theme : null, sh = m ? m.shape : { width: 250, length: 320, shapeN: 2.36 };
+    const a = 19 * sh.width / 250, b = 27 * sh.length / 320, n = sh.shapeN, cx = 30, cy = 34;
+    const pts = [];
+    for (let i = 0; i < 48; i++) {
+      const th = i / 48 * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+      pts.push((cx + a * Math.sign(c) * Math.pow(Math.abs(c), 2 / n)).toFixed(1) + ','
+        + (cy + b * Math.sign(s) * Math.pow(Math.abs(s), 2 / n)).toFixed(1));
+    }
+    const bot = cy + b, frame = t ? t.frameB : '#5b6470', edge = t ? t.frameEdge : '#2a2f37';
+    const grip = t ? t.grip : '#2a2f37', butt = t ? t.butt : '#5b6470', acc = t ? t.accent : 'none';
+    return `<svg viewBox="0 0 60 100" aria-hidden="true" focusable="false">
+      <path d="M${cx - 9} ${bot - 3} L${cx - 3} 72 M${cx + 9} ${bot - 3} L${cx + 3} 72" stroke="${edge}" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+      <path d="M${cx - 9} ${bot - 3} L${cx - 3} 72 M${cx + 9} ${bot - 3} L${cx + 3} 72" stroke="${frame}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <rect x="${cx - 3.5}" y="70" width="7" height="25" rx="2" fill="${grip}" stroke="${edge}" stroke-width="1"/>
+      <rect x="${cx - 4}" y="93" width="8" height="4" rx="1.5" fill="${butt}"/>
+      <polygon points="${pts.join(' ')}" fill="none" stroke="${edge}" stroke-width="6"/>
+      <polygon points="${pts.join(' ')}" fill="none" stroke="${frame}" stroke-width="4"${m ? '' : ' stroke-dasharray="3 3"'}/>
+      ${m ? `<polygon points="${pts.join(' ')}" fill="none" stroke="${acc}" stroke-width="1" opacity=".9"/>` : ''}
+    </svg>`;
+  }
+  function renderModelRow() {
+    const row = el('modelRow');
+    if (!row.dataset.filled) {
+      row.innerHTML = [null].concat(RACKET_MODELS).map(m =>
+        `<button type="button" class="mp-card" data-model="${m ? m.id : ''}"
+          data-find="${m ? fold(m.brand + m.name) : 'skip notlisted'}">
+          ${miniRacket(m)}<b>${m ? m.name : 'Skip'}</b><em>${m ? m.brand : 'Not listed'}</em></button>`).join('');
+      row.dataset.filled = '1';
+    }
+    const cur = state.model || '';
+    all('#modelRow .mp-card').forEach(b => {
+      const on = b.dataset.model === cur;
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+    });
+  }
+  /* People type the racket as it is printed: "Blade 98 v9", "Ezone100",
+     "Speed Pro". The list names lines without head size, version or
+     variant, so a word that matches nothing (a number, v9, Pro, MP) is
+     dropped as long as the rest of the words still find something. */
+  const VARIANT = /^(\d+[a-z]?|v\d+|mp|pro|tour|team|lite|plus|ul|l|s|ls|x)$/;
+  function modelMatches(find, raw) {
+    const words = String(raw).toLowerCase().replace(/([a-z]{2,})(\d)/g, '$1 $2')
+      .split(/[^a-z0-9]+/).filter(Boolean);
+    const whole = fold(raw);
+    if (!whole || find.indexOf(whole) !== -1) return true;
+    const hit = w => find.indexOf(w) !== -1;
+    if (words.every(hit)) return true;
+    const core = words.filter(w => !VARIANT.test(w));
+    return core.length > 0 && core.every(hit) && words.filter(w => !hit(w)).every(w => VARIANT.test(w));
+  }
+  function filterModels() {
+    const raw = el('modelSearch').value, q = fold(raw);
+    const cards = all('#modelRow .mp-card');
+    // Skip always stays, so there is always a way out of the search
+    cards.forEach(b => { b.hidden = !!b.dataset.model && !!q && !modelMatches(b.dataset.find, raw); });
+    el('modelEmpty').hidden = !q || cards.some(b => b.dataset.model && !b.hidden);
+    el('modelRow').scrollLeft = 0;
+    modelEdges();
+  }
+  /* Fade and arrows say whether there is more to either side */
+  function modelEdges() {
+    const row = el('modelRow');
+    const start = row.scrollLeft <= 2, end = row.scrollLeft + row.clientWidth >= row.scrollWidth - 2;
+    row.classList.toggle('at-start', start); row.classList.toggle('at-end', end);
+    const prev = document.querySelector('.mp-arrow.prev'), next = document.querySelector('.mp-arrow.next');
+    if (prev) prev.disabled = start;
+    if (next) next.disabled = end;
+  }
+  function pickModel(id) {
+    const sel = el('selModel'); sel.value = id;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   /* The racket tab is a deck too, the same shape as the string tab: one answer
@@ -856,7 +972,7 @@
     if (!on) return;
     backTab = state.tab === 'learn' ? backTab : state.tab;
     b.textContent = backTab === 'do' ? `\u2190 Back to step ${state.step + 1}`
-      : `\u2190 Back to ${{ racket: 'Your racket', string: 'String' }[backTab] || 'where you were'}`;
+      : `\u2190 Back to ${{ racket: 'Racket', string: 'String' }[backTab] || 'where you were'}`;
   }
   function showTab(name, keepScroll) {
     if (['racket', 'string', 'do', 'learn'].indexOf(name) < 0) name = 'racket';
@@ -987,11 +1103,15 @@
       host.addEventListener('click', e => {
         if (e.target.closest('.modal-back, .modal-x')) host.classList.remove('on');
       });
+      // a tablet with a keyboard closes it the way it closes every other pop-up
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && host.classList.contains('on')) host.classList.remove('on');
+      });
     }
     const lesson = g.dataset.lesson === 'start' ? 'start' : 'finish';
     host.innerHTML = `<div class="modal-back"></div>
       <div class="modal-card ks-card" role="dialog" aria-modal="true" aria-label="${g.dataset.label}">
-        <button class="modal-x" aria-label="Close">&times;</button>
+        <button type="button" class="modal-x" aria-label="Close">&times;</button>
         <p class="ks-kind">${lesson === 'start' ? 'Starting knot' : 'Finishing tie-off'}</p>
         <h2 class="ks-h">${g.dataset.label}</h2>
         ${g.dataset.note ? `<p class="ks-note">${g.dataset.note}</p>` : ''}
@@ -1419,6 +1539,22 @@
       state.model = modelById(e.target.value) ? e.target.value : null;
       render(false); mountKnots();
     });
+    el('modelRow').addEventListener('click', e => {
+      const b = e.target.closest('.mp-card'); if (b) pickModel(b.dataset.model);
+    });
+    el('modelSearch').addEventListener('input', filterModels);
+    el('modelRow').addEventListener('scroll', () => requestAnimationFrame(modelEdges), { passive: true });
+    addEventListener('resize', modelEdges);
+    el('modelSearch').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const first = all('#modelRow .mp-card').find(b => b.dataset.model && !b.hidden);
+      if (first && el('modelSearch').value.trim()) { pickModel(first.dataset.model); first.focus(); }
+    });
+    all('.mp-arrow').forEach(a => a.addEventListener('click', () => {
+      const row = el('modelRow');
+      row.scrollBy({ left: +a.dataset.mp * row.clientWidth * 0.8, behavior: 'smooth' });
+    }));
 
     /* ---- 2 · string ---- */
     /* On one piece the kind card has a single control, so choosing carries you

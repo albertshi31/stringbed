@@ -22,8 +22,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=108">
-<link rel="stylesheet" href="tension.css?v=108">
+<link rel="stylesheet" href="styles.css?v=122">
+<link rel="stylesheet" href="tension.css?v=122">
 </head>
 <body>
 <div class="app" id="app">
@@ -37,7 +37,7 @@
 
     <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
       <button class="tab on" data-tab="racket" role="tab" id="tab-btn-racket"
-        aria-controls="tab-racket" aria-selected="true"><b>1</b>Your racket</button>
+        aria-controls="tab-racket" aria-selected="true"><b>1</b>Racket</button>
       <button class="tab" data-tab="string" role="tab" id="tab-btn-string"
         aria-controls="tab-string" aria-selected="false" tabindex="-1"><b>2</b>String</button>
       <button class="tab" data-tab="do" role="tab" id="tab-btn-do"
@@ -67,12 +67,20 @@
             Read these off your own frame. They decide how it is strung.</p>
           </header>
 
-          <nav class="deck-nav" id="rDeckNav" role="tablist" aria-label="Your racket"></nav>
+          <nav class="deck-nav" id="rDeckNav" role="tablist" aria-label="Racket"></nav>
 
           <section class="fieldset card rcard" hidden>
             <h2>Model <em class="opt">Optional</em></h2>
-            <label class="field head-field"><span class="sr-only">Model</span>
-              <select id="selModel"></select></label>
+            <label class="mp-search"><span class="sr-only">Find your racket</span>
+              <input type="search" id="modelSearch" placeholder="Type your racket, like Blade or Pure Aero"
+                autocomplete="off" spellcheck="false" aria-controls="modelRow"></label>
+            <div class="mp-wrap">
+              <button type="button" class="mp-arrow prev" data-mp="-1" aria-label="Scroll back">&lsaquo;</button>
+              <div class="mp-row" id="modelRow" role="group" aria-label="Racket models"></div>
+              <button type="button" class="mp-arrow next" data-mp="1" aria-label="Scroll on">&rsaquo;</button>
+            </div>
+            <p class="mp-empty" id="modelEmpty" hidden>No match. Pick Skip, it only changes the colors.</p>
+            <select id="selModel" hidden aria-hidden="true" tabindex="-1"></select>
             <p class="help">Changes the drawings&rsquo; look. Pick your pattern next.</p>
           </section>
 
@@ -485,22 +493,22 @@
   <div class="modal" id="throatModal"></div>
 </div>
 
-<script src="js/fmt.js?v=108"></script>
-<script src="js/models.js?v=108"></script>
-<script src="js/frame.js?v=108"></script>
-<script src="js/strings.js?v=108"></script>
-<script src="js/geometry.js?v=108"></script>
-<script src="js/racketSvg.js?v=108"></script>
-<script src="js/steps.js?v=108"></script>
-<script src="js/throat.js?v=108"></script>
-<script src="js/knot.js?v=108"></script>
-<script src="js/startKnot.js?v=108"></script>
-<script src="js/machines.js?v=108"></script>
-<script src="js/job.js?v=108"></script>
-<script src="js/wizard.js?v=108"></script>
-<script src="js/holes.js?v=108"></script>
-<script src="js/weaveQuiz.js?v=108"></script>
-<script src="js/confirm.js?v=108"></script>
-<script src="js/app.js?v=108"></script>
+<script src="js/fmt.js?v=122"></script>
+<script src="js/models.js?v=122"></script>
+<script src="js/frame.js?v=122"></script>
+<script src="js/strings.js?v=122"></script>
+<script src="js/geometry.js?v=122"></script>
+<script src="js/racketSvg.js?v=122"></script>
+<script src="js/steps.js?v=122"></script>
+<script src="js/throat.js?v=122"></script>
+<script src="js/knot.js?v=122"></script>
+<script src="js/startKnot.js?v=122"></script>
+<script src="js/machines.js?v=122"></script>
+<script src="js/job.js?v=122"></script>
+<script src="js/wizard.js?v=122"></script>
+<script src="js/holes.js?v=122"></script>
+<script src="js/weaveQuiz.js?v=122"></script>
+<script src="js/confirm.js?v=122"></script>
+<script src="js/app.js?v=122"></script>
 </body>
 </html>
