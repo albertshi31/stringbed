@@ -285,16 +285,15 @@
 
   /* ---------------- the spec strip ---------------- */
   function renderSpec(c) {
-    const cut = Fmt.cutFor(c.stats, state.method === 'one');
+    /* the cut length lives in step 3, where the string is measured. A picked
+       model leads the racket, as it is printed: Dunlop FX 18x20 */
+    const m = modelById(state.model);
     el('specStrip').innerHTML = [
-      /* the pattern leads. The model is only the look, so on a phone, where the
-         strip is one line of plain text, it is left off */
-      ['Racket', frameLabel(c.r) + (modelById(state.model)
-        ? `<span class="spec-model"> · ${modelById(state.model).name}</span>` : '')],
+      ['Racket', m ? `${m.brand} ${m.name} ${c.r.pattern}` : c.r.pattern],
       ['String', stringWords(c.sM, c.sC, c.gM)],
       ['Tension', state.tMain === state.tCross ? state.tMain + ' lb'
           : state.tMain + ' / ' + state.tCross + ' lb'],
-      ['Cut', Fmt.metres(cut)]
+      ['Method', state.method === 'one' ? 'One piece' : 'Two piece']
     ].map(([k, v]) => `<span class="spec-i"><em>${k}</em><b>${v}</b></span>`).join('');
   }
 
@@ -479,7 +478,7 @@
       </button>`).join('');
     cardEls().forEach((p, i) => { p.hidden = i !== state.card; });
     el('deckPrev').disabled = state.card === 0;
-    el('deckNext').textContent = state.card === CARDS.length - 1 ? 'Next: string it' : 'Next';
+    el('deckNext').textContent = state.card === CARDS.length - 1 ? 'Next: restring' : 'Next';
   }
 
   /* Out of range goes on to the next screen, which is what "next" means on the

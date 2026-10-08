@@ -129,6 +129,7 @@ a{color:var(--accent)}
    and a little air, next to the steps rather than exiled to the far side of the
    bar, where it read as another header control rather than a section. */
 .tab-ref{margin-left:12px;padding-left:18px;border-left:1px solid var(--line)}
+.tab-ico{width:15px;height:15px;flex:none}
 
 .top-actions{display:flex;align-items:center;gap:12px;flex:none}
 .top-link{font-size:13px;color:var(--muted);text-decoration:none;padding:6px 2px}
@@ -1187,8 +1188,8 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .stage-tools{position:static;justify-content:flex-end;margin-top:8px;background:none;padding:0}
   /* the buttons sit under the drawing on a phone, so the hint rides above them */
   #tab-string .art-hint{bottom:62px}
-  /* a phone gets the four facts as a 2x2 grid that wraps, not a strip that
-     runs off the edge and cuts the string name in half */
+  /* a narrow screen gets the four facts as a 2x2 grid that wraps, not a strip
+     that runs off the edge and cuts the string name in half */
   .spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}
   .spec-i{white-space:normal;padding:9px 12px 10px;border-right:0;border-bottom:1px solid var(--line)}
   .spec-i:nth-child(odd){padding-left:0;border-right:1px solid var(--line)}
@@ -1616,4 +1617,14 @@ table.mini .cut-row th,table.mini .cut-row td{color:var(--ink);font-weight:600}
   .deck-n{margin-top:1px}
   .deck-t{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:1px}
   .deck-t em{margin-left:0;text-align:left;white-space:normal}
+}
+
+/* On phones Learn is a pill in the accent, so it reads as a place to go and
+   not as a leftover word at the end of the tabs. */
+@media(max-width:640px){
+  .tabs .tab-ref{margin:6px 0 6px auto;padding:0 12px;min-height:34px;align-self:center;
+    border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:999px;
+    background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent-2);font-weight:600}
+  .tabs .tab-ref.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .tabs .tab-ref::after{display:none}
 }
